@@ -15,22 +15,26 @@ import datetime
 # Function which populates a HashTable with data from the Package File.
 # An improvement to the code would be to have to buildTable function inside the HashMap class
 # But the constraints of building the HashMap class per the PA state not to use any libraries or packages
-def buildTable(capacity):
+def generateWork(capacity):
     try:
-        packagetable = HashMap(capacity)
-
+        # Create a hash map with a size of 'capacity'
+        packages = HashMap(capacity)
+        # Load the package data using the loadPackages utility
         workload = Utils.loadPackages()
+        # Convert the package data into a csv reader object
         workload = csv.reader(workload)
-        for packages in workload:
-            packageID = int(packages[0])
-            address = packages[1]
-            city = packages[2]
-            state = packages[3]
-            zipcode = packages[4]
-            deadline = packages[5]
-            weight = packages[6]
-            note = packages[7]
-
+        # Iterate over each row in the csv reader
+        for objects in workload:
+            # Extract the package information from the row
+            packageID = int(objects[0])
+            address = objects[1]
+            city = objects[2]
+            state = objects[3]
+            zipcode = objects[4]
+            deadline = objects[5]
+            weight = objects[6]
+            note = objects[7]
+            # Create a new Package object with the extracted data
             package = Package(packageID,
                               address,
                               city,
@@ -40,11 +44,14 @@ def buildTable(capacity):
                               weight,
                               Package.Status.HUB.value,
                               note)
-
-            packagetable.add(packageID, package)
-
-        return packagetable
-    except csv.Error as e:
+            # Add the new Package to the hash map using the packageID as the key
+            packages.add(packageID, package)
+            # Change the status of the package to 'Out for Delivery'
+            package.Status = Package.Status.OUT.value
+        # Return the hash map of packages
+        return packages
+    except csv.Error as e:  # Catch any csv errors
+        # Print an error message if there's a problem with the csv data
         print("Error building table")
 
 
@@ -54,7 +61,7 @@ def deliverPackages(truck):
     # Continues as long as there are packages left to deliver
     while truck.packages:
         distances = []  # Stores the distances from the truck to the packages
-        delivered = []
+        delivered = []  # Stores the packages that have been delivered
         # Calculates the distance to each package
         for packageID in truck.packages:
             package = hash_table.search(packageID)  # Retrieves the package details
@@ -72,7 +79,7 @@ def deliverPackages(truck):
         # Adds the package to the list of delivered packages
         delivered.append((nearestpackage[1], nearestpackage[1].status))
         # Removes the delivered package from the truck's packages
-        truck.packages.remove(nearestpackage[1].ID)
+        truck.packages.remove(nearestpackage[1].id)
         # Updates the location of the truck to the location of the package that was just delivered
         truck.updateLocation(nearestpackage[1].address)
     # Returns the total mileage of the truck after all packages have been delivered
@@ -104,7 +111,7 @@ def deliverPackagesOG(truck):
             # Update truck location to package address which prepares for next iteration
             truck.updateLocation(package.address)
             # Remove package from hash table
-            hash_table.hash_remove(package.ID)
+            hash_table.hash_remove(package.id)
             # Increment delivery index
             index += 1
         # If incremented through all packages in truck
@@ -125,7 +132,7 @@ def deliverPackagesOG(truck):
             return truck.mileage
 
 
-hash_table = buildTable(40)
+hash_table = generateWork(40)
 deliverPackages(truck1)
 deliverPackages(truck2)
 deliverPackages(truck3)
