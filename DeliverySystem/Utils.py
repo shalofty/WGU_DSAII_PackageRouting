@@ -36,7 +36,7 @@ class Utils:
                 packagefile = csv.reader(packagecsv)
                 packagefile = list(packagecsv)
             return packagefile
-        except csv.Erorr as e:
+        except csv.Error as e:
             sys.exit("Error loading packages")
 
     # Method which returns an addressfile list
@@ -111,8 +111,15 @@ class Utils:
         except csv.Error as e:
             sys.exit("Error getting address.")
 
+    # Method which returns the time travelled to deliver package
+    @staticmethod
+    def timeTravelled(distance):
+        speed = 18
+        time = distance / speed
+        return time
 
-# Access utilies for distances, packages, and addresses
+
+# Access utilities for distances, packages, and addresses
 distancetable = Utils.loadDistances()
 packagefile = Utils.loadPackages()
 addressfile = Utils.loadAddresses()

@@ -10,7 +10,7 @@ class Package:
         DEL = "Delivered"
 
     # Initializes a Package object
-    def __init__(self, ID, address, city, state, zipcode, deadline, weight, status):
+    def __init__(self, ID, address, city, state, zipcode, deadline, weight, status, note):
         self.ID = ID
         self.address = address
         self.city = city
@@ -19,6 +19,7 @@ class Package:
         self.deadline = deadline
         self.weight = weight
         self.status = Package.Status.HUB.value # everything starts at the Hub
+        self.note = None
 
     # Returns a string of the Package object
     # Without this, it will only show location in memory

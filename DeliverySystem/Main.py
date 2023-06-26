@@ -5,8 +5,10 @@ from HashMap import *
 from Package import *
 from Fleet import *
 from Utils import *
+from Exceptions import *
 
 import csv
+import statistics
 import datetime
 
 
@@ -27,6 +29,7 @@ def buildTable(capacity):
             zipcode = row[4]
             deadline = row[5]
             weight = row[6]
+            note = row[7]
 
             package = Package(packageID,
                               address,
@@ -35,7 +38,8 @@ def buildTable(capacity):
                               zipcode,
                               deadline,
                               weight,
-                              Package.Status.HUB.value)
+                              Package.Status.HUB.value,
+                              note)
 
             packagetable.add(packageID, package)
 
@@ -44,63 +48,37 @@ def buildTable(capacity):
         print("Error building table")
 
 
-# def deliverPackages(truck):
-#     preshipment = []
-#     try:
-#         for packageID in truck.packages:
-#             package = hash_table.search(packageID)
-#             preshipment.append(package)
-#         truck.packages.clear()
-#         currentaddress = Utils.getAddress(truck.address)
-#
-#         while preshipment:
-#             shortestDistance = float('inf')
-#             nextPackage = None
-#
-#             for package in preshipment:
-#                 packageaddress = Utils.getAddress(package.address)
-#                 distance = Utils.findDistance(currentaddress, packageaddress)
-#
-#                 if distance <= shortestDistance:
-#                     shortestDistance = distance
-#                     nextPackage = package
-#
-#             truck.packages.append(nextPackage.ID)
-#             preshipment.remove(nextPackage)
-#             truck.mileage += shortestDistance
-#             truck.address = nextPackage.address
-#
-#     except csv.Error as e:
-#         print("Error delivering packages")
+# Worst Case: O(n^2)
+# deliverPackages function incorporates a variant of the Greedy Algorithm
+def deliverPackages(truck):
+    # Continues as long as there are packages left to deliver
+    while truck.packages:
+        distances = []  # Stores the distances from the truck to the packages
+        # Calculates the distance to each package
+        for packageID in truck.packages:
+            package = hash_table.search(packageID)  # Retrieves the package details
+            distance = Utils.findDistance(truck.address,
+                                          package.address)  # Calculates the distance from the truck to the package
+            if distance is None:
+                distance = 0.0
+            distances.append((distance, package))  # Appends the distance and package as a tuple to the distances list
+        # Finds the package with the smallest distance to the truck
+        nearest_package = min(distances, key=lambda x: x[0])
+        # Increases the mileage of the truck by the distance to the nearest package
+        truck.mileage += nearest_package[0]
+        # Removes the delivered package from the truck's packages
+        truck.packages.remove(nearest_package[1].ID)
+        # Updates the location of the truck to the location of the package that was just delivered
+        truck.updateLocation(nearest_package[1].address)
+    # Returns the total mileage of the truck after all packages have been delivered
+    return truck.mileage
 
 
-# def deliverLoad(truck):
-#     load = []
-#     distances = []
-#     try:
-#         for packageid in truck.packages:
-#             package = hash_table.search(packageid)
-#             distance = Utils.findDistance(truck.address, package.address)
-#             load.append(package)
-#             distances.append(distance)
-#             hash_table.hash_remove(packageid)
-#             nearest = min(distances)
-#             index = distances.index(nearest)
-#             # nearestaddress = addresses[index]
-#             print("Number of packages in truck: ", len(truck.packages))
-#             if len(truck.packages) == 0:
-#                 truck.mileage += sum(distances)
-#                 print(truck.mileage)
-#                 break
-#
-#         truck.packages.clear()
-#     except csv.Error as e:
-#         print("Error delivering packages")
-
-
-# Currently incorporating a greedy algorithm to deliver packages
+# This is an original draft of the algorithm
 # The algo always chooses the nearest package to the current address
-def deliver(truck):
+# The worst-case is O(n^2), mileage is about 204.3 which isn't good enough
+# At this point in development I was not keeping track of time
+def deliverPackagesOG(truck):
     packages = []
     distances = []
     path = []
@@ -143,10 +121,9 @@ def deliver(truck):
 
 
 hash_table = buildTable(40)
-
-deliver(truck1)
-deliver(truck2)
-deliver(truck3)
+deliverPackages(truck1)
+deliverPackages(truck2)
+deliverPackages(truck3)
 totalmileage = truck1.mileage + truck2.mileage + truck3.mileage
 print("Total Mileage: ", totalmileage)
 # Working on getting it below 140 miles, currently at 204.3 miles
