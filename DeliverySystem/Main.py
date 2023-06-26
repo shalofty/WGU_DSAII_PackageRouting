@@ -19,17 +19,17 @@ def buildTable(capacity):
     try:
         packagetable = HashMap(capacity)
 
-        packagefile = Utils.loadPackages()
-        packagefile = csv.reader(packagefile)
-        for row in packagefile:
-            packageID = int(row[0])
-            address = row[1]
-            city = row[2]
-            state = row[3]
-            zipcode = row[4]
-            deadline = row[5]
-            weight = row[6]
-            note = row[7]
+        workload = Utils.loadPackages()
+        workload = csv.reader(workload)
+        for packages in workload:
+            packageID = int(packages[0])
+            address = packages[1]
+            city = packages[2]
+            state = packages[3]
+            zipcode = packages[4]
+            deadline = packages[5]
+            weight = packages[6]
+            note = packages[7]
 
             package = Package(packageID,
                               address,
@@ -54,6 +54,7 @@ def deliverPackages(truck):
     # Continues as long as there are packages left to deliver
     while truck.packages:
         distances = []  # Stores the distances from the truck to the packages
+        delivered = []
         # Calculates the distance to each package
         for packageID in truck.packages:
             package = hash_table.search(packageID)  # Retrieves the package details
@@ -63,15 +64,19 @@ def deliverPackages(truck):
                 distance = 0.0
             distances.append((distance, package))  # Appends the distance and package as a tuple to the distances list
         # Finds the package with the smallest distance to the truck
-        nearest_package = min(distances, key=lambda x: x[0])
+        nearestpackage = min(distances, key=lambda x: x[0])
         # Increases the mileage of the truck by the distance to the nearest package
-        truck.mileage += nearest_package[0]
+        truck.mileage += nearestpackage[0]
+        # Updates the status of the package to "Delivered"
+        nearestpackage[1].status = Package.Status.DEL.value
+        # Adds the package to the list of delivered packages
+        delivered.append((nearestpackage[1], nearestpackage[1].status))
         # Removes the delivered package from the truck's packages
-        truck.packages.remove(nearest_package[1].ID)
+        truck.packages.remove(nearestpackage[1].ID)
         # Updates the location of the truck to the location of the package that was just delivered
-        truck.updateLocation(nearest_package[1].address)
+        truck.updateLocation(nearestpackage[1].address)
     # Returns the total mileage of the truck after all packages have been delivered
-    return truck.mileage
+    return truck.mileage, delivered
 
 
 # This is an original draft of the algorithm
