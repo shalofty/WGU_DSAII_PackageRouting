@@ -1,6 +1,8 @@
 import csv
 import sys
 
+from Coords import coordinates
+
 
 # Utils file for whatever arbitrary utilities are necessary
 # Helps keep codebase clean and tidy
@@ -118,8 +120,25 @@ class Utils:
         time = distance / speed
         return time
 
+    # Find coordinates of address using addressfile and Coords
+    @staticmethod
+    def findCoordinates(address):
+        try:
+            addressfile = Utils.loadAddresses()
+            addressfile = csv.reader(addressfile)
+            addressfile = list(addressfile)
+            for index, row in enumerate(addressfile):
+                if address == row[2]:
+                    coords = coordinates[index]
+                    return coords
+            return None
+        except csv.Error as e:
+            sys.exit("Error getting coordinates.")
+
 
 # Access utilities for distances, packages, and addresses
 distancetable = Utils.loadDistances()
 packagefile = Utils.loadPackages()
 addressfile = Utils.loadAddresses()
+
+# Utils.findCoordinates("410 S State St")

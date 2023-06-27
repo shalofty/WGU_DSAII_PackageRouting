@@ -26,14 +26,8 @@ canvas.pack(expand=tk.YES, fill=tk.BOTH)
 canvas.create_image(0, 0, image=map, anchor=tk.NW)
 
 
-def generatePath(coordinates):
-    origin = [397, 456]  # WGU coordinates
-    while len(coordinates) > 0:
-        for index, coords in enumerate(coordinates):
-            if coords is not None:
-                canvas.create_line(origin[0], origin[1], coords[0], coords[1], fill="red", width=3, smooth=True)
-                coordinates.pop(index)
-                origin = coords
+def generatePath(currentcoordinates, nearestcoordinates):
+    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill="blue", width=3, smooth=True)
 
 
 # establish menuorigin allows for easier menu creation. Typical origin is 0,0
@@ -107,32 +101,42 @@ def deliverPackages(truck):
             distances.append((distance, package))
             # Add the package to the packages list
             packages.append(package)
-            path.append((package.acoords, distance))
-            if index == (len(truck.packages) - 1):
-                generatePath(cords)
-
         # Finds the package with the smallest distance to the truck
-        nearestpackage = min(distances, key=lambda x: x[0])
+        nearestneighbor = min(distances, key=lambda x: x[0])
+        # Save current truck coordinates
+        currentcoordinates = truck.coordinates
+        # Update truck coordinates to nearest package coordinates
+        if truck.address == "4001 South 700 East":
+            truck.updateLocation(nearestneighbor[1].address)
+            truck.updateCoordinates(nearestneighbor[1].acoords)
+        # Add the coordinates of the nearest package to the path with respect to the indexing scheme of the addressfile
+        path.append(nearestneighbor[1].acoords)
+        # Finds the coordinates of the nearest package
+        nearestcoordinates = Utils.findCoordinates(nearestneighbor[1].address)
+        # Draws the path from the truck to the nearest package
+        generatePath(currentcoordinates, nearestcoordinates)
         # Increases the mileage of the truck by the distance to the nearest package
-        truck.mileage += nearestpackage[0]
+        truck.mileage += nearestneighbor[0]
         # Updates the status of the package to "Delivered"
-        nearestpackage[1].status = Package.Status.DEL.value
+        nearestneighbor[1].status = Package.Status.DEL.value
         # Adds the package to the list of delivered packages
-        delivered.append((nearestpackage[1], nearestpackage[1].status))
+        delivered.append((nearestneighbor[1], nearestneighbor[1].status))
         # Removes the delivered package from the truck's packages
-        truck.packages.remove(nearestpackage[1].id)
+        truck.packages.remove(nearestneighbor[1].id)
         # Updates the location of the truck to the location of the package that was just delivered
-        truck.updateLocation(nearestpackage[1].address)
+        truck.updateLocation(nearestneighbor[1].address)
+        # Updates the current coordinates to the trucks new coordinates
+        currentcoordinates = truck.coordinates
     # Returns the total mileage of the truck after all packages have been delivered
     return truck.mileage, delivered, path
 
 
 hash_table = generateWork(40)
 route1 = deliverPackages(truck1)
-mileage, delivered, path = route1
-print("Total Mileage: ", mileage)
-print("Delivered Packages: ", delivered)
-print("Path: ", path)
+# mileage, delivered, path = route1
+# print("Total Mileage: ", mileage)
+# print("Delivered Packages: ", delivered)
+# print("Path: ", path)
 route2 = deliverPackages(truck2)
 route3 = deliverPackages(truck3)
 totalmileage = truck1.mileage + truck2.mileage + truck3.mileage
