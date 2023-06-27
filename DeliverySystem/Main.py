@@ -27,7 +27,7 @@ canvas.create_image(0, 0, image=map, anchor=tk.NW)
 
 
 def generatePath(currentcoordinates, nearestcoordinates):
-    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill="blue", width=3, smooth=True)
+    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill="blue", width=3, smooth=True, arrow=tk.LAST)
 
 
 # establish menuorigin allows for easier menu creation. Typical origin is 0,0
@@ -90,7 +90,7 @@ def deliverPackages(truck):
         # Append coordinates to cords array
         for xy in coordinates:
             cords.append(xy)
-        # Calculates the distance to each package
+        # Add distances and packages to the distances and packages lists
         for index, packageID in enumerate(truck.packages):
             package = hash_table.search(packageID)  # Retrieves the package details
             package.acoords = cords[index]  # Sets the package's address coordinates
@@ -106,7 +106,7 @@ def deliverPackages(truck):
         # Save current truck coordinates
         currentcoordinates = truck.coordinates
         # Update truck coordinates to nearest package coordinates
-        if truck.address == "4001 South 700 East":
+        if truck.address == "4001 South 700 East":  # Hub address
             truck.updateLocation(nearestneighbor[1].address)
             truck.updateCoordinates(nearestneighbor[1].acoords)
         # Add the coordinates of the nearest package to the path with respect to the indexing scheme of the addressfile
@@ -117,16 +117,18 @@ def deliverPackages(truck):
         generatePath(currentcoordinates, nearestcoordinates)
         # Increases the mileage of the truck by the distance to the nearest package
         truck.mileage += nearestneighbor[0]
+        # Updates the location of the truck to the location of the package that was just delivered
+        truck.updateLocation(nearestneighbor[1].address)
+        # Updates the coordinates of the truck to the coordinates of the package that was just delivered
+        truck.updateCoordinates(nearestcoordinates)
         # Updates the status of the package to "Delivered"
         nearestneighbor[1].status = Package.Status.DEL.value
         # Adds the package to the list of delivered packages
         delivered.append((nearestneighbor[1], nearestneighbor[1].status))
         # Removes the delivered package from the truck's packages
         truck.packages.remove(nearestneighbor[1].id)
-        # Updates the location of the truck to the location of the package that was just delivered
-        truck.updateLocation(nearestneighbor[1].address)
-        # Updates the current coordinates to the trucks new coordinates
-        currentcoordinates = truck.coordinates
+
+
     # Returns the total mileage of the truck after all packages have been delivered
     return truck.mileage, delivered, path
 
@@ -137,8 +139,8 @@ route1 = deliverPackages(truck1)
 # print("Total Mileage: ", mileage)
 # print("Delivered Packages: ", delivered)
 # print("Path: ", path)
-route2 = deliverPackages(truck2)
-route3 = deliverPackages(truck3)
+# route2 = deliverPackages(truck2)
+# route3 = deliverPackages(truck3)
 totalmileage = truck1.mileage + truck2.mileage + truck3.mileage
 print("Total Mileage: ", totalmileage)
 
