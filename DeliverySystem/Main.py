@@ -12,6 +12,33 @@ import csv
 import datetime
 import tkinter as tk
 
+### GUI Code ###
+root = tk.Tk()
+root.title("Package Delivery System")
+
+# Load the map image
+map = tk.PhotoImage(file="map.png")
+w = map.width()
+h = map.height()
+# Create a canvas that can fit the above image
+canvas = tk.Canvas(root, width=(w + 200), height=h, bg="white")
+canvas.pack(expand=tk.YES, fill=tk.BOTH)
+canvas.create_image(0, 0, image=map, anchor=tk.NW)
+
+
+def generatePath(coordinates):
+    origin = [397, 456]  # WGU coordinates
+    while len(coordinates) > 0:
+        for index, coords in enumerate(coordinates):
+            if coords is not None:
+                canvas.create_line(origin[0], origin[1], coords[0], coords[1], fill="red", width=3, smooth=True)
+                coordinates.pop(index)
+                origin = coords
+
+
+# establish menuorigin allows for easier menu creation. Typical origin is 0,0
+morigin = [672, 756]
+
 
 # Function which populates a HashTable with data from the Package File.
 # An improvement to the code would be to have to buildTable function inside the HashMap class
@@ -56,31 +83,34 @@ def generateWork(capacity):
         print("Error building table")
 
 
-def generatePath(coordinates):
-    origin = [397, 456]  # WGU coordinates
-    while len(coordinates) > 0:
-        for index, coords in enumerate(coordinates):
-            if coords is not None:
-                canvas.create_line(origin[0], origin[1], coords[0], coords[1], fill="red", width=3, smooth=True)
-                coordinates.pop(index)
-                origin = coords
-
-
 # Worst Case: O(n^2)
 # deliverPackages function incorporates a variant of the Greedy Algorithm
 def deliverPackages(truck):
     # Continues as long as there are packages left to deliver
     while truck.packages:
+        cords = []
+        packages = []  # Stores the packages that are to be delivered
         distances = []  # Stores the distances from the truck to the packages
         delivered = []  # Stores the packages that have been delivered
         path = []  # Stores the path that the truck will take
+        # Append coordinates to cords array
+        for xy in coordinates:
+            cords.append(xy)
         # Calculates the distance to each package
-        for packageID in truck.packages:
+        for index, packageID in enumerate(truck.packages):
             package = hash_table.search(packageID)  # Retrieves the package details
+            package.acoords = cords[index]  # Sets the package's address coordinates
             distance = Utils.findDistance(truck.address, package.address)  # Calculates the distance from the truck to the package
             if distance is None:
                 distance = 0.0
-            distances.append((distance, package)) # Appends the distance and package as a tuple to the distances list
+            # Adds the distance and package to the distances list
+            distances.append((distance, package))
+            # Add the package to the packages list
+            packages.append(package)
+            path.append((package.acoords, distance))
+            if index == (len(truck.packages) - 1):
+                generatePath(cords)
+
         # Finds the package with the smallest distance to the truck
         nearestpackage = min(distances, key=lambda x: x[0])
         # Increases the mileage of the truck by the distance to the nearest package
@@ -107,21 +137,5 @@ route2 = deliverPackages(truck2)
 route3 = deliverPackages(truck3)
 totalmileage = truck1.mileage + truck2.mileage + truck3.mileage
 print("Total Mileage: ", totalmileage)
-
-### GUI Code ###
-root = tk.Tk()
-root.title("Package Delivery System")
-
-# Load the map image
-map = tk.PhotoImage(file="map.png")
-w = map.width()
-h = map.height()
-# Create a canvas that can fit the above image
-canvas = tk.Canvas(root, width=(w + 200), height=h, bg="white")
-canvas.pack(expand=tk.YES, fill=tk.BOTH)
-canvas.create_image(0, 0, image=map, anchor=tk.NW)
-
-# establish menuorigin allows for easier menu creation. Typical origin is 0,0
-morigin = [672, 756]
 
 root.mainloop()
