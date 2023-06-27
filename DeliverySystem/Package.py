@@ -20,7 +20,7 @@ class Package:
         self.deadline = deadline
         self.weight = weight
         self.status = Package.Status.HUB.value  # everything starts at the Hub
-        self.note = None
+        self.note = note
         self.coordinates = None
 
     # Returns a string of the Package object

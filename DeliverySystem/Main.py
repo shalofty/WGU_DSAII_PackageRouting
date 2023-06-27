@@ -149,71 +149,36 @@ truck3button.place(x=morigin[0] + 10, y=morigin[1] - 90)
 # Loads the packages into the hash table data structure
 hash_table = loadWork()
 
-# tree = ttk.Treeview(root, columns="Value", show="headings")
-#
-# tree.heading("Value", text="Value")
-#
-# tree.column("Value", width=100, anchor="center")
-#
-# data_list = [1, 2, 3, 4, 5]
-#
-# for i in data_list:
-#     tree.insert("", "end", values=(i,))
-#
-# tree.place(x=10, y=10)
-#
-# tree.pack()
 
-tree = ttk.Treeview(root, columns=("Package ID", "Address", "City", "State", "Zip Code", "Deadline", "Weight", "Status", "Note"), show="headings")
+# Creates a tree view of the packages
+def plantTree():
+    columns = ["Package ID", "Address", "City", "State", "Zip Code", "Deadline", "Weight", "Status", "Note"]
+    tree = ttk.Treeview(root, columns=columns, show="headings")
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=100, anchor="center")
+    data_list = [
+        (
+            package.id,
+            package.address,
+            package.city,
+            package.state,
+            package.zipcode,
+            package.deadline,
+            package.weight,
+            package.status,
+            package.note
+        )
+        for i in range(1, 41)
+        for package in [hash_table.search(i)]
+    ]
+    for i in data_list:
+        tree.insert("", "end", values=i)
+    tree.place(x=10, y=10)
+    tree.pack()
 
-tree.heading("Package ID", text="Package ID")
 
-tree.heading("Address", text="Address")
-
-tree.heading("City", text="City")
-
-tree.heading("State", text="State")
-
-tree.heading("Zip Code", text="Zip Code")
-
-tree.heading("Deadline", text="Deadline")
-
-tree.heading("Weight", text="Weight")
-
-tree.heading("Status", text="Status")
-
-tree.heading("Note", text="Note")
-
-tree.column("Package ID", width=100, anchor="center")
-
-tree.column("Address", width=100, anchor="center")
-
-tree.column("City", width=100, anchor="center")
-
-tree.column("State", width=100, anchor="center")
-
-tree.column("Zip Code", width=100, anchor="center")
-
-tree.column("Deadline", width=100, anchor="center")
-
-tree.column("Weight", width=100, anchor="center")
-
-tree.column("Status", width=100, anchor="center")
-
-tree.column("Note", width=100, anchor="center")
-
-data_list = []
-
-for i in range(1, 41):
-    package = hash_table.search(i)
-    data_list.append((package.id, package.address, package.city, package.state, package.zipcode, package.deadline, package.weight, package.status, package.note))
-
-for i in data_list:
-    tree.insert("", "end", values=i)
-
-tree.place(x=10, y=10)
-
-tree.pack()
+plantTree()
 
 
 # Returns the total mileage of all trucks after delivery
