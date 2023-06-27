@@ -1,15 +1,16 @@
 # Author: Stephan Haloftis
-# Student ID:
+# Student ID: 010727171
 
 from HashMap import *
 from Package import *
 from Fleet import *
 from Utils import *
 from Exceptions import *
+from Coords import coordinates
 
 import csv
-import statistics
 import datetime
+import tkinter as tk
 
 
 # Function which populates a HashTable with data from the Package File.
@@ -55,6 +56,16 @@ def generateWork(capacity):
         print("Error building table")
 
 
+def generatePath(coordinates):
+    origin = [397, 456]  # WGU coordinates
+    while len(coordinates) > 0:
+        for index, coords in enumerate(coordinates):
+            if coords is not None:
+                canvas.create_line(origin[0], origin[1], coords[0], coords[1], fill="red", width=3, smooth=True)
+                coordinates.pop(index)
+                origin = coords
+
+
 # Worst Case: O(n^2)
 # deliverPackages function incorporates a variant of the Greedy Algorithm
 def deliverPackages(truck):
@@ -62,14 +73,14 @@ def deliverPackages(truck):
     while truck.packages:
         distances = []  # Stores the distances from the truck to the packages
         delivered = []  # Stores the packages that have been delivered
+        path = []  # Stores the path that the truck will take
         # Calculates the distance to each package
         for packageID in truck.packages:
             package = hash_table.search(packageID)  # Retrieves the package details
-            distance = Utils.findDistance(truck.address,
-                                          package.address)  # Calculates the distance from the truck to the package
+            distance = Utils.findDistance(truck.address, package.address)  # Calculates the distance from the truck to the package
             if distance is None:
                 distance = 0.0
-            distances.append((distance, package))  # Appends the distance and package as a tuple to the distances list
+            distances.append((distance, package)) # Appends the distance and package as a tuple to the distances list
         # Finds the package with the smallest distance to the truck
         nearestpackage = min(distances, key=lambda x: x[0])
         # Increases the mileage of the truck by the distance to the nearest package
@@ -83,67 +94,34 @@ def deliverPackages(truck):
         # Updates the location of the truck to the location of the package that was just delivered
         truck.updateLocation(nearestpackage[1].address)
     # Returns the total mileage of the truck after all packages have been delivered
-    return truck.mileage, delivered
-
-
-# This is an original draft of the algorithm
-# The algo always chooses the nearest package to the current address
-# The worst-case is O(n^2), mileage is about 204.3 which isn't good enough
-# At this point in development I was not keeping track of time
-def deliverPackagesOG(truck):
-    packages = []
-    distances = []
-    path = []
-    outfordelivery = True
-    index = 0
-    unprocessed = True
-    currentaddress = truck.address
-    while outfordelivery:
-        if unprocessed:
-            # Assign package to variable
-            package = hash_table.search(truck.packages[index])
-            # Calculate distance from current address to package address
-            distance = Utils.findDistance(currentaddress, package.address)
-            # Add package to list of packages
-            packages.append(package)
-            # Add distance to list of distances
-            distances.append(distance)
-            # Update truck location to package address which prepares for next iteration
-            truck.updateLocation(package.address)
-            # Remove package from hash table
-            hash_table.hash_remove(package.id)
-            # Increment delivery index
-            index += 1
-        # If incremented through all packages in truck
-        if index == (len(truck.packages)):
-            unprocessed = False  # Disables first if statement
-            # Find nearest package
-            nearest = min(distances)
-            # Find index of nearest package
-            nindex = distances.index(nearest)
-            # Add nearest package to path
-            path.append(distances[nindex])
-            # Remove nearest package from packages list
-            distances.pop(nindex)
-            truck.mileage += nearest
-        if len(distances) == 0:
-            outfordelivery = False
-            print("Truck Mileage: ", truck.mileage)
-            return truck.mileage
+    return truck.mileage, delivered, path
 
 
 hash_table = generateWork(40)
-deliverPackages(truck1)
-deliverPackages(truck2)
-deliverPackages(truck3)
+route1 = deliverPackages(truck1)
+mileage, delivered, path = route1
+print("Total Mileage: ", mileage)
+print("Delivered Packages: ", delivered)
+print("Path: ", path)
+route2 = deliverPackages(truck2)
+route3 = deliverPackages(truck3)
 totalmileage = truck1.mileage + truck2.mileage + truck3.mileage
 print("Total Mileage: ", totalmileage)
-# Working on getting it below 140 miles, currently at 204.3 miles
 
-# Test Code
-# hash_table = buildTable(40)
-# i = 1
-# while i <= 40:
-#     value = hash_table.search(i)
-#     print(value)
-#     i += 1
+### GUI Code ###
+root = tk.Tk()
+root.title("Package Delivery System")
+
+# Load the map image
+map = tk.PhotoImage(file="map.png")
+w = map.width()
+h = map.height()
+# Create a canvas that can fit the above image
+canvas = tk.Canvas(root, width=(w + 200), height=h, bg="white")
+canvas.pack(expand=tk.YES, fill=tk.BOTH)
+canvas.create_image(0, 0, image=map, anchor=tk.NW)
+
+# establish menuorigin allows for easier menu creation. Typical origin is 0,0
+morigin = [672, 756]
+
+root.mainloop()

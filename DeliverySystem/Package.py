@@ -20,6 +20,7 @@ class Package:
         self.weight = weight
         self.status = Package.Status.HUB.value  # everything starts at the Hub
         self.note = None
+        self.addresscoords = None
 
     # Returns a string of the Package object
     # Without this, it will only show location in memory
