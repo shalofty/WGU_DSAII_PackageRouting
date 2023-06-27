@@ -11,6 +11,7 @@ from Coords import coordinates
 import csv
 import datetime
 import tkinter as tk
+from tkinter import ttk
 
 ### GUI Code ###
 root = tk.Tk()
@@ -26,8 +27,8 @@ canvas.pack(expand=tk.YES, fill=tk.BOTH)
 canvas.create_image(0, 0, image=map, anchor=tk.NW)
 
 
-def generatePath(currentcoordinates, nearestcoordinates):
-    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill="blue", width=3, smooth=True, arrow=tk.LAST)
+def generatePath(currentcoordinates, nearestcoordinates, color):
+    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
 
 
 # establish menuorigin allows for easier menu creation. Typical origin is 0,0
@@ -37,7 +38,9 @@ morigin = [672, 756]
 # Function which populates a HashTable with data from the Package File.
 # An improvement to the code would be to have to buildTable function inside the HashMap class
 # But the constraints of building the HashMap class per the PA state not to use any libraries or packages
-def generateWork(capacity):
+def loadWork():
+    capacity = 40
+    global packages
     try:
         # Create a hash map with a size of 'capacity'
         packages = HashMap(capacity)
@@ -68,8 +71,9 @@ def generateWork(capacity):
                               note)
             # Add the new Package to the hash map using the packageID as the key
             packages.add(packageID, package)
-            # Change the status of the package to 'Out for Delivery'
-            package.Status = Package.Status.OUT.value
+            # Change the status of the package to 'Processing'
+            package.Status = Package.Status.PRO.value
+        print("Packages loaded successfully")
         # Return the hash map of packages
         return packages
     except csv.Error as e:  # Catch any csv errors
@@ -79,7 +83,7 @@ def generateWork(capacity):
 
 # Worst Case: O(n^2)
 # deliverPackages function incorporates a variant of the Greedy Algorithm
-def deliverPackages(truck):
+def deliverPackages(truck, color):
     # Continues as long as there are packages left to deliver
     while truck.packages:
         cords = []
@@ -93,7 +97,7 @@ def deliverPackages(truck):
         # Add distances and packages to the distances and packages lists
         for index, packageID in enumerate(truck.packages):
             package = hash_table.search(packageID)  # Retrieves the package details
-            package.acoords = cords[index]  # Sets the package's address coordinates
+            package.coordinates = cords[index]  # Sets the package's address coordinates
             distance = Utils.findDistance(truck.address, package.address)  # Calculates the distance from the truck to the package
             if distance is None:
                 distance = 0.0
@@ -108,13 +112,13 @@ def deliverPackages(truck):
         # Update truck coordinates to nearest package coordinates
         if truck.address == "4001 South 700 East":  # Hub address
             truck.updateLocation(nearestneighbor[1].address)
-            truck.updateCoordinates(nearestneighbor[1].acoords)
+            truck.updateCoordinates(nearestneighbor[1].coordinates)
         # Add the coordinates of the nearest package to the path with respect to the indexing scheme of the addressfile
-        path.append(nearestneighbor[1].acoords)
+        path.append(nearestneighbor[1].coordinates)
         # Finds the coordinates of the nearest package
         nearestcoordinates = Utils.findCoordinates(nearestneighbor[1].address)
         # Draws the path from the truck to the nearest package
-        generatePath(currentcoordinates, nearestcoordinates)
+        generatePath(currentcoordinates, nearestcoordinates, color)
         # Increases the mileage of the truck by the distance to the nearest package
         truck.mileage += nearestneighbor[0]
         # Updates the location of the truck to the location of the package that was just delivered
@@ -127,21 +131,105 @@ def deliverPackages(truck):
         delivered.append((nearestneighbor[1], nearestneighbor[1].status))
         # Removes the delivered package from the truck's packages
         truck.packages.remove(nearestneighbor[1].id)
-
-
     # Returns the total mileage of the truck after all packages have been delivered
+    print(str(truck.name) + " mileage: " + str(truck.mileage))
     return truck.mileage, delivered, path
 
 
-hash_table = generateWork(40)
-route1 = deliverPackages(truck1)
-# mileage, delivered, path = route1
-# print("Total Mileage: ", mileage)
-# print("Delivered Packages: ", delivered)
-# print("Path: ", path)
-# route2 = deliverPackages(truck2)
-# route3 = deliverPackages(truck3)
-totalmileage = truck1.mileage + truck2.mileage + truck3.mileage
-print("Total Mileage: ", totalmileage)
+# Buttons to deliver packages
+truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
+truck1button.place(x=morigin[0] + 10, y=morigin[1] - 30)
+
+truck2button = tk.Button(root, text="Truck 2", command=lambda: deliverPackages(truck2, "blue"))
+truck2button.place(x=morigin[0] + 10, y=morigin[1] - 60)
+
+truck3button = tk.Button(root, text="Truck 3", command=lambda: deliverPackages(truck3, "green"))
+truck3button.place(x=morigin[0] + 10, y=morigin[1] - 90)
+
+# Loads the packages into the hash table data structure
+hash_table = loadWork()
+
+# tree = ttk.Treeview(root, columns="Value", show="headings")
+#
+# tree.heading("Value", text="Value")
+#
+# tree.column("Value", width=100, anchor="center")
+#
+# data_list = [1, 2, 3, 4, 5]
+#
+# for i in data_list:
+#     tree.insert("", "end", values=(i,))
+#
+# tree.place(x=10, y=10)
+#
+# tree.pack()
+
+tree = ttk.Treeview(root, columns=("Package ID", "Address", "City", "State", "Zip Code", "Deadline", "Weight", "Status", "Note"), show="headings")
+
+tree.heading("Package ID", text="Package ID")
+
+tree.heading("Address", text="Address")
+
+tree.heading("City", text="City")
+
+tree.heading("State", text="State")
+
+tree.heading("Zip Code", text="Zip Code")
+
+tree.heading("Deadline", text="Deadline")
+
+tree.heading("Weight", text="Weight")
+
+tree.heading("Status", text="Status")
+
+tree.heading("Note", text="Note")
+
+tree.column("Package ID", width=100, anchor="center")
+
+tree.column("Address", width=100, anchor="center")
+
+tree.column("City", width=100, anchor="center")
+
+tree.column("State", width=100, anchor="center")
+
+tree.column("Zip Code", width=100, anchor="center")
+
+tree.column("Deadline", width=100, anchor="center")
+
+tree.column("Weight", width=100, anchor="center")
+
+tree.column("Status", width=100, anchor="center")
+
+tree.column("Note", width=100, anchor="center")
+
+data_list = []
+
+for i in range(1, 41):
+    package = hash_table.search(i)
+    data_list.append((package.id, package.address, package.city, package.state, package.zipcode, package.deadline, package.weight, package.status, package.note))
+
+for i in data_list:
+    tree.insert("", "end", values=i)
+
+tree.place(x=10, y=10)
+
+tree.pack()
+
+
+# Returns the total mileage of all trucks after delivery
+def returnTotalMileage():
+    if truck1.mileage and truck2.mileage and truck3.mileage is not None:
+        totalmileage = round((truck1.mileage + truck2.mileage + truck3.mileage), 2)
+        print("Total Mileage: ", totalmileage)
+        totalmileagelabel = tk.Label(root, text=f"Total Mileage: {totalmileage}")
+        totalmileagelabel.place(x=morigin[0] + 10, y=morigin[1] - 120)
+        return totalmileage
+
+
+totalmileage = returnTotalMileage()
+
+totalmileagebutton = tk.Button(root, text="Total Mileage", command=returnTotalMileage)
+totalmileagebutton.place(x=morigin[0] + 10, y=morigin[1] - 150)
+
 
 root.mainloop()

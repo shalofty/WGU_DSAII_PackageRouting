@@ -2,6 +2,7 @@
 class Truck:
     # Initializes a Truck object
     def __init__(self, capacity, speed, load, packages, mileage, address):
+        self.name = None
         self.capacity = capacity
         self.speed = speed
         self.load = load

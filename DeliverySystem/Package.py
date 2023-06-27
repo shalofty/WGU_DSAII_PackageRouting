@@ -6,6 +6,7 @@ class Package:
     # Nested class for Package Status. Improves organization and encapsulation.
     class Status(Enum):
         HUB = "Docked at Station"
+        PRO = "Processing"
         OUT = "Out for Delivery"
         DEL = "Delivered"
 
@@ -20,7 +21,7 @@ class Package:
         self.weight = weight
         self.status = Package.Status.HUB.value  # everything starts at the Hub
         self.note = None
-        self.acoords = None
+        self.coordinates = None
 
     # Returns a string of the Package object
     # Without this, it will only show location in memory
