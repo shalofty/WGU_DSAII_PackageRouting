@@ -137,6 +137,7 @@ def deliverPackages(truck, color):
         # Removes the delivered package from the truck's packages
         truck.packages.remove(nearestneighbor[1].id)
     # Returns the total mileage of the truck after all packages have been delivered
+    updateTree(tree)
     print(str(truck.name) + " mileage: " + str(truck.mileage))
     return truck.mileage, delivered
 
@@ -189,6 +190,44 @@ def buildTree():
     return tree
 
 
+def clearTree(tree):
+    tree.destroy()
+
+
+def updateTree(tree):
+    tree.delete(*tree.get_children())
+    # Insert the data into the tree view
+    packagedata = [
+        (
+            package.id,
+            package.address,
+            package.city,
+            package.state,
+            package.zipcode,
+            package.deadline,
+            package.weight,
+            package.status,
+            package.note
+        )
+        for i in range(1, 41)
+        for package in [workload.search(i)]
+    ]
+    # Insert the data into the tree view
+    for i in packagedata:
+        if i[7] == "Docked at Station":
+            tree.insert("", "end", values=i, tags="athub")
+            tree.tag_configure('athub', background='yellow')
+        if i[7] == "Processing":
+            tree.insert("", "end", values=i, tags="processing")
+            tree.tag_configure('processing', background='blue')
+        if i[7] == "Delivered":
+            tree.insert("", "end", values=i, tags="delivered")
+            tree.tag_configure('delivered', background='green')
+        if i[7] == "Delayed":
+            tree.insert("", "end", values=i, tags="delayed")
+            tree.tag_configure('delayed', background='red')
+
+
 # Returns the total mileage of all trucks after delivery
 def returnTotalMileage():
     if truck1.mileage and truck2.mileage and truck3.mileage is not None:
@@ -197,6 +236,7 @@ def returnTotalMileage():
         totalmileagelabel = tk.Label(root, text=f"Total Mileage: {totalmileage}")
         totalmileagelabel.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 120)
         return totalmileage
+
 
 # seardhLoad() searches for a package by ID and focuses on it in the tree view
 def searchLoad(packageID, tree):
@@ -219,8 +259,8 @@ searchentry.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
 
 searchbutton = tk.Button(root, text="Search", command=lambda: searchLoad(int(searchentry.get()), tree))
 searchbutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 180)
-searchbutton.pack(side="bottom")
-searchentry.pack(side="bottom")
+searchbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
+searchentry.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
 truck1button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 30)
