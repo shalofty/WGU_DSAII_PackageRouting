@@ -1,5 +1,6 @@
 import csv
 import sys
+import datetime
 
 from Coords import coordinates
 
@@ -115,7 +116,7 @@ class Utils:
 
     # Method which returns the time travelled to deliver package
     @staticmethod
-    def timeTravelled(distance):
+    def calculateTime(distance):
         speed = 18
         time = distance / speed
         return time

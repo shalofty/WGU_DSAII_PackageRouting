@@ -22,6 +22,8 @@ class Package:
         self.status = Package.Status.HUB.value  # everything starts at the Hub
         self.note = note
         self.coordinates = None
+        self.delay = None
+        self.timedelivered = None
 
     # Returns a string of the Package object
     # Without this, it will only show location in memory

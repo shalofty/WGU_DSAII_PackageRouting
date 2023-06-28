@@ -13,6 +13,9 @@ import datetime
 import tkinter as tk
 from tkinter import ttk
 
+# Setting time to 8:00 AM
+time = datetime.datetime(2020, 1, 1, 8, 0, 0)
+
 # GUI Settings
 WINDOW_TITLE = "Package Delivery System"
 MAP_IMAGE_PATH = "map.png"
@@ -29,9 +32,28 @@ w = map.width()
 h = map.height()
 
 # Create a canvas that can fit the above image
-canvas = tk.Canvas(root, width=(w + 200), height=h, bg="white")
+canvas = tk.Canvas(root, width=w, height=h, bg="grey")
 canvas.pack(expand=tk.YES, fill=tk.BOTH)
 canvas.create_image(0, 0, image=map, anchor=tk.NW)
+
+
+# passTime function which takes distance as a parameter and returns the time taken to travel that distance
+def passTime(distance):
+    global time
+    timetaken = Utils.calculateTime(distance)
+    hour = int(timetaken)
+    minute = int((timetaken - hour) * 60)
+    hour0 = time.hour
+    minute0 = time.minute
+    hour += hour0
+    minute += minute0
+    if minute >= 60:
+        hour += 1
+        minute -= 60
+    if hour >= 24:
+        hour -= 24
+    time = datetime.datetime(2020, 1, 1, hour, minute, 0)
+    return time
 
 
 def generatePath(currentcoordinates, nearestcoordinates, color):
@@ -112,6 +134,11 @@ def deliverPackages(truck, color):
             packages.append(package)
         # Finds the package with the smallest distance to the truck
         nearestneighbor = min(distances, key=lambda x: x[0])
+        # Increment the time by the time it takes to deliver the nearest package
+        # truck.time = Utils.calculateTimeDT(time, nearestneighbor[0])
+        truck.time = passTime(nearestneighbor[0])
+        # Update package time to truck time
+        nearestneighbor[1].time = truck.time
         # Save current truck coordinates
         currentcoordinates = truck.coordinates
         # Update truck coordinates to nearest package coordinates
@@ -138,8 +165,7 @@ def deliverPackages(truck, color):
         truck.packages.remove(nearestneighbor[1].id)
     # Returns the total mileage of the truck after all packages have been delivered
     updateTree(tree)
-    print(str(truck.name) + " mileage: " + str(truck.mileage))
-    return truck.mileage, delivered
+    return truck.mileage, delivered, time
 
 
 # Loads the packages into the hash table data structure
@@ -154,7 +180,7 @@ def buildTree():
     # Set the headings and column widths
     for col in columns:
         tree.heading(col, text=col)
-        tree.column(col, width=100, anchor="center")
+        tree.column(col, width=74, anchor="center")
     # Insert the data into the tree view
     packagedata = [
         (
@@ -228,14 +254,20 @@ def updateTree(tree):
             tree.tag_configure('delayed', background='red')
 
 
-# Returns the total mileage of all trucks after delivery
-def returnTotalMileage():
+def returnTripReport():
+    trucks = [truck1, truck2, truck3]
+    for truck in trucks:
+        if truck.time is not None:
+            totaltime = truck.time
+            totaltimelabel = tk.Label(root, text=f"Total Time: {totaltime}")
+            totaltimelabel.pack(side="bottom", fill="x")
     if truck1.mileage and truck2.mileage and truck3.mileage is not None:
         totalmileage = round((truck1.mileage + truck2.mileage + truck3.mileage), 2)
-        print("Total Mileage: ", totalmileage)
         totalmileagelabel = tk.Label(root, text=f"Total Mileage: {totalmileage}")
-        totalmileagelabel.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 120)
-        return totalmileage
+        totalmileagelabel.pack(side="bottom", fill="x")
+    print("Time: ", totaltime)
+    print("Mileage: ", totalmileage)
+    return totalmileage, totaltime
 
 
 # seardhLoad() searches for a package by ID and focuses on it in the tree view
@@ -263,15 +295,19 @@ searchbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 searchentry.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
-truck1button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 30)
+# truck1button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 30)
+truck1button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck2button = tk.Button(root, text="Truck 2", command=lambda: deliverPackages(truck2, "blue"))
-truck2button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 60)
+# truck2button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 60)
+truck2button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck3button = tk.Button(root, text="Truck 3", command=lambda: deliverPackages(truck3, "green"))
-truck3button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 90)
+# truck3button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 90)
+truck3button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
-totalmileagebutton = tk.Button(root, text="Total Mileage", command=returnTotalMileage)
-totalmileagebutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
+calculationsbutton = tk.Button(root, text="Calculate", command=returnTripReport)
+# totalmileagebutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
+calculationsbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 root.mainloop()
