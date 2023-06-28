@@ -5,7 +5,6 @@ from Truck import *
 class Fleet:
     def __init__(self):
         self.trucks = []
-        self.startwork = '08:00'
 
     def add(self, truck):
         self.trucks.append(truck)

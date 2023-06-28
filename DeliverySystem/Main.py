@@ -265,9 +265,12 @@ def returnTripReport():
         totalmileage = round((truck1.mileage + truck2.mileage + truck3.mileage), 2)
         totalmileagelabel = tk.Label(root, text=f"Total Mileage: {totalmileage}")
         totalmileagelabel.pack(side="bottom", fill="x")
+    timepassed = totaltime - datetime.timedelta(hours=8)
+    timeformatted = timepassed.strftime("%H:%M")
+    print("Time passed: ", timeformatted)
     print("Time: ", totaltime)
     print("Mileage: ", totalmileage)
-    return totalmileage, totaltime
+    return totalmileage, timeformatted
 
 
 # seardhLoad() searches for a package by ID and focuses on it in the tree view
