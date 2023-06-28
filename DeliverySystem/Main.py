@@ -18,12 +18,10 @@ WINDOW_TITLE = "Package Delivery System"
 MAP_IMAGE_PATH = "map.png"
 MENU_ORIGIN = [672, 756]
 
-
 root = tk.Tk()
 root.title(WINDOW_TITLE)
 root.resizable(False, False)
 root.configure(background="white")
-trucks = [truck1, truck2, truck3]
 
 # Load the map image
 map = tk.PhotoImage(file=MAP_IMAGE_PATH)
@@ -36,17 +34,9 @@ canvas.pack(expand=tk.YES, fill=tk.BOTH)
 canvas.create_image(0, 0, image=map, anchor=tk.NW)
 
 
-# def setupButtons():
-#     truck_colors = ["red", "blue", "green"]
-#     for i in range(3):
-#         button = tk.Button(root, text=f"Truck {i + 1}",
-#                            command=lambda: deliverPackages(trucks[i], truck_colors[i]))
-#         button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 30 - (i * 30))
-
-
 def generatePath(currentcoordinates, nearestcoordinates, color):
-    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0],
-                            nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
+    canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
+
 
 # Function which populates a HashTable with data from the Package File.
 # An improvement to the code would be to have to buildTable function inside the HashMap class
@@ -93,6 +83,7 @@ def loadWork():
         # Print an error message if there's a problem with the csv data
         print("Error building table")
 
+
 # Worst Case: O(n^2)
 # deliverPackages function incorporates a variant of the Greedy Algorithm
 def deliverPackages(truck, color):
@@ -109,7 +100,7 @@ def deliverPackages(truck, color):
             cords.append(xy)
         # Add distances and packages to the distances and packages lists
         for index, packageID in enumerate(truck.packages):
-            package = hash_table.search(packageID)  # Retrieves the package details
+            package = workload.search(packageID)  # Retrieves the package details
             package.coordinates = cords[index]  # Sets the package's address coordinates
             distance = Utils.findDistance(truck.address,
                                           package.address)  # Calculates the distance from the truck to the package
@@ -151,11 +142,11 @@ def deliverPackages(truck, color):
 
 
 # Loads the packages into the hash table data structure
-hash_table = loadWork()
+workload = loadWork()
 
 
 # Creates a tree view of the packages
-def plantTree():
+def buildTree():
     # Create a tree view with the following columns
     columns = ["Package ID", "Address", "City", "State", "Zip Code", "Deadline", "Weight", "Status", "Note"]
     tree = ttk.Treeview(root, columns=columns, show="headings")
@@ -177,11 +168,10 @@ def plantTree():
             package.note
         )
         for i in range(1, 41)
-        for package in [hash_table.search(i)]
+        for package in [workload.search(i)]
     ]
     # Insert the data into the tree view
     for i in packagedata:
-        print(i)
         if i[7] == "Docked at Station":
             tree.insert("", "end", values=i, tags="athub")
             tree.tag_configure('athub', background='yellow')
@@ -196,6 +186,7 @@ def plantTree():
             tree.tag_configure('delayed', background='red')
     tree.place(x=10, y=10)
     tree.pack()
+    return tree
 
 
 # Returns the total mileage of all trucks after delivery
@@ -207,8 +198,29 @@ def returnTotalMileage():
         totalmileagelabel.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 120)
         return totalmileage
 
-# Buttons to deliver packages
+# seardhLoad() searches for a package by ID and focuses on it in the tree view
+def searchLoad(packageID, tree):
+    package = workload.search(packageID)
+    for child in tree.get_children():
+        if tree.item(child)["values"][0] == package.id:
+            tree.selection_set(child)
+            tree.see(child)
+            tree.focus(child)
+            break
+    return package
 
+# More GUI Setup
+
+
+tree = buildTree()
+
+searchentry = tk.Entry(root)
+searchentry.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
+
+searchbutton = tk.Button(root, text="Search", command=lambda: searchLoad(int(searchentry.get()), tree))
+searchbutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 180)
+searchbutton.pack(side="bottom")
+searchentry.pack(side="bottom")
 
 truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
 truck1button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 30)
@@ -222,6 +234,4 @@ truck3button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 90)
 totalmileagebutton = tk.Button(root, text="Total Mileage", command=returnTotalMileage)
 totalmileagebutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
 
-
-plantTree()
 root.mainloop()
