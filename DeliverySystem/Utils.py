@@ -19,9 +19,9 @@ class Utils:
                 reader = csv.reader(file, delimiter=',')
                 for row in reader:
                     rowvals = []
-                    for cell in row:
+                    for cell in row[1:]:
                         if cell:
-                            rowvals.append(cell)
+                            rowvals.append(float(cell))
                         else:
                             rowvals.append(float('inf'))
                     distancetable.append(rowvals)
@@ -31,8 +31,8 @@ class Utils:
         finally:
             file.close()
 
-    # Method which returns a packagefile list
     @staticmethod
+    # Method which returns a packagefile list
     def loadPackages():
         try:
             with open('packagelist.csv', 'r') as packagecsv:
@@ -116,9 +116,9 @@ class Utils:
 
     # Method which returns the time travelled to deliver package
     @staticmethod
-    def calculateTime(distance):
-        speed = 18
-        time = distance / speed
+    def calculateduration(distance):
+        speed = 18.0  # miles per hour
+        time = distance / speed  # hours
         return time
 
     # Find coordinates of address using addressfile and Coords

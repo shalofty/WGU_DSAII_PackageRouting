@@ -5,7 +5,7 @@ from enum import Enum
 class Package:
     # Nested class for Package Status. Improves organization and encapsulation.
     class Status(Enum):
-        HUB = "Docked at Station"
+        HUB = "Docked at Hub"
         PRO = "Processing"
         OUT = "Out for Delivery"
         DEL = "Delivered"
@@ -36,8 +36,3 @@ class Package:
                                                    self.deadline,
                                                    self.weight,
                                                    self.status)
-
-
-# print(Package.Status.HUB.value)
-# print(Package.Status.OUT.value)
-# print(Package.Status.DEL.value)
