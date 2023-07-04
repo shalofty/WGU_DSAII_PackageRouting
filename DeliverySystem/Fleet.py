@@ -8,6 +8,10 @@ class Fleet:
         self.totalmileage = 0.0 # miles
         self.starttime = "8:00 AM"
         self.timeonroad = 0.0 # hours
+
+    def __iter__(self):
+        return iter(self.trucks)
+
     def add(self, truck):
         self.trucks.append(truck)
 

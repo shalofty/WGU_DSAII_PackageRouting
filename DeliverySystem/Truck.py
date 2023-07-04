@@ -28,3 +28,17 @@ class Truck:
     # updateMileage method which changes the Truck mileage to currentmileage
     def updateTime(self, currenttime):
         self.time = currenttime
+
+    # def removepackage(self, deliveredpackage):
+    #     for packages in self.cargo:
+    #         for package in packages:
+    #             print(package)
+    #             if deliveredpackage == package:
+    #                 self.cargo.remove(package)
+    def removepackage(self, deliveredpackage):
+        for packages in self.cargo:
+            for package in packages:
+                if deliveredpackage == package:
+                    packages.remove(package)
+        raise ValueError("list.remove(x): x not in list")
+

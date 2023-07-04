@@ -74,8 +74,7 @@ def sortload(truck):
                     minutesdelayed = package.delay
                     timedelta = datetime.timedelta(minutes=minutesdelayed)
                     delaytime = time + timedelta
-                    print(f"Package {package.id} is delayed until {delaytime.time()}")
-
+                    # print(f"Package {package.id} is delayed until {delaytime.time()}")
                 if len(sorted) == truck.capacity:
                     return sorted
 
@@ -90,7 +89,7 @@ def sortload(truck):
                     # Add to load
                     sorted.append(package)
                     map.grouped.remove(package)
-                    print(f"Package {package.id} is a group package. It has been loaded.")
+                    # print(f"Package {package.id} is a group package. It has been loaded.")
 
                 if len(sorted) == truck.capacity:
                     return sorted
@@ -101,12 +100,12 @@ def sortload(truck):
                 if package.exclusive and package.priority:
                     if "Truck 2" not in truck.name:
                         map.priority.remove(package)
-                        print(f"Package {package.id} is an exclusive package, but not for {truck.name}")
+                        # print(f"Package {package.id} is an exclusive package, but not for {truck.name}")
                     elif "Truck 2" in truck.name:
                         sorted.append(package)
                         map.priority.remove(package)
                         map.exclusive.remove(package)
-                        print(f"Package {package.id} is an exclusive package. It has been loaded.")
+                        # print(f"Package {package.id} is an exclusive package. It has been loaded.")
 
                     if len(sorted) == truck.capacity:
                         return sorted
@@ -118,7 +117,7 @@ def sortload(truck):
                     if time < delaytime:
                         map.priority.remove(package)
                         map.delayed.append(package)
-                        print(f"Package {package.id} is mislabeled. It has been removed from priority list.")
+                        # print(f"Package {package.id} is mislabeled. It has been removed from priority list.")
                     else:
                         # Correct address for package 9
                         # Note: "No match found for address" error when parsing distance table till after time
@@ -129,7 +128,7 @@ def sortload(truck):
 
                         sorted.append(package)
                         map.mislabel.remove(package)
-                        print(f"Package {package.id} label has been corrected. It has been loaded.")
+                        # print(f"Package {package.id} label has been corrected. It has been loaded.")
 
                     if len(sorted) == truck.capacity:
                         return sorted
@@ -140,15 +139,7 @@ def sortload(truck):
                 if package.priority:
                     sorted.append(package)
                     map.priority.remove(package)
-                    print(f"Package {package.id} is a priority package")
-
-                # # If there isn't a full load of packages left
-                # elif len(sorted) < 16 and len(map.packages) == 0:
-                #     return sorted
-                # if not package.exception:
-                #     # Add non-exception packages to load
-                #     sorted.append(package)
-                # # print(f"Package {package.id} is a non-exception package")
+                    # print(f"Package {package.id} is a priority package")
 
                 if len(sorted) == truck.capacity:
                     return sorted
@@ -158,21 +149,20 @@ def sortload(truck):
         print("Error building table")
 
 
-truck1 = Truck()
-truck1.name = "Truck 1"
-load1 = sortload(truck1)
-truck1.cargo.append(load1)
-
-for packages in truck1.cargo:
-    for package in packages:
-        package.status = package.Status.OUT.value
-        print(f"Package {package.id} is {package.status} on {truck1.name}.")
+# Sort packages into truck loads, change package status to "Out for delivery"
+for truck in fleet:
+    load = sortload(truck)
+    truck.cargo.append(load)
+    for packages in truck.cargo:
+        for package in packages:
+            package.status = package.Status.OUT.value
+            print(f"Package {package.id} has been loaded on {truck.name} and is out for delivery.")
 
 
 def deliver(truck):
-    distances = []
-    # While the truck has packages
-    while len(truck.cargo) > 0:
+    delivered = []
+    while len(delivered) < 16:
+        distances = []
 
         # Find the nearest neighbor
         for packages in truck.cargo:
@@ -184,7 +174,7 @@ def deliver(truck):
 
         # Filter out the None values
         # distances = list(filter(lambda x: x[1] is not None, distances))
-        distance = [d for d in distances if d[1] is not None]
+        distances = [d for d in distances if d[1] is not None]
         if distances:
             # Find the package with the smallest distance
             nearest = min(distances, key=lambda x: x[1])
@@ -194,26 +184,27 @@ def deliver(truck):
 
         # Increment the truck's mileage by the distance to the nearest package
         truck.mileage += float(nearest[1])
+        print(f"{truck.name} traveled {nearest[1]} miles to {nearest[0].address}")
+        print(f"{truck.name} has traveled {truck.mileage} miles\n")
+
+        # Add nearest to delivered
+        delivered.append(nearest[0])
+        print(f"Package {nearest[0].id} has been delivered to {nearest[0].address}.\n")
+
+        # Remove nearest from cargo
+        truck.removepackage(nearest[0])
 
         # Update package status to delivered
         nearest[0].status = nearest[0].Status.DEL.value
-        for packages in truck.cargo:
-            for package in packages:
-                if package.status == package.Status.DEL.value:
-                    print(f"Package {package.id} is {package.status} on {truck.name}.")
 
         # Remove nearest from distances
         distances.remove(nearest)
-
-        # Remove nearest from truck.cargo
-        for packages in truck.cargo:
-            for package in packages:
-                if package == nearest[0]:
-                    packages.remove(package)
-                    print(f"Package {package.id} has been removed from {truck.name}.")
+    print(f"{truck.name} has delivered all packages.\n")
 
 
-deliver(truck1)
+# Deliver packages
+for truck in fleet:
+    deliver(truck)
 
 
 def deliverpackages(truck, load, time):
