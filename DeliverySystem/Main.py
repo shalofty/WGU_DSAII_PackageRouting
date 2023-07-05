@@ -14,7 +14,7 @@ from tkinter import ttk
 
 # Creating a PackageMap object and loading the package list
 map = PackageMap()
-list = map.packagelist()
+list = map.packagelist
 map.add(list)
 packages = map.packages
 
@@ -31,12 +31,12 @@ root.title(WINDOW_TITLE)
 root.resizable(False, False)
 root.configure(background="white")
 
-# Load the map image
+# Load the map image for the GUI
 pmap = tk.PhotoImage(file=MAP_IMAGE_PATH)
 w = pmap.width()
 h = pmap.height()
 
-# Create a canvas that can fit the above image
+# Create a canvas that can fit the map image
 canvas = tk.Canvas(root, width=w, height=h, bg="grey")
 canvas.pack(expand=tk.YES, fill=tk.BOTH)
 canvas.create_image(0, 0, image=pmap, anchor=tk.NW)
@@ -71,6 +71,7 @@ def sortload(truck):
                 # Only sort through undelivered packages
                 # Use timedelta to create delay time for delayed packages
                 if package.delayed:
+                    # Calculate delay time for comparison
                     minutesdelayed = package.delay
                     timedelta = datetime.timedelta(minutes=minutesdelayed)
                     delaytime = time + timedelta
@@ -80,10 +81,15 @@ def sortload(truck):
 
             # Grouped
             for package in map.packages:
+                # Sort out delays
                 if package.delayed:
                     minutesdelayed = package.delay
                     timedelta = datetime.timedelta(minutes=minutesdelayed)
                     delaytime = time + timedelta
+                    # If time is greater than or equal to delaytime, add to load
+                    if time >= delaytime:
+                        sorted.append(package)
+                        map.delayed.remove(package)
                 # Add group packages to load first
                 if package.group:
                     # Add to load
@@ -96,6 +102,15 @@ def sortload(truck):
 
             # Exclusive/Priority
             for package in map.packages:
+                # Sort out delays
+                if package.delayed:
+                    minutesdelayed = package.delay
+                    timedelta = datetime.timedelta(minutes=minutesdelayed)
+                    delaytime = time + timedelta
+                    # If time is greater than or equal to delaytime, add to load
+                    if time >= delaytime:
+                        sorted.append(package)
+                        map.delayed.remove(package)
                 # Remove exclusive packages from priority list
                 if package.exclusive and package.priority:
                     if "Truck 2" not in truck.name:
@@ -159,7 +174,7 @@ for truck in fleet:
             print(f"Package {package.id} has been loaded on {truck.name} and is out for delivery.")
 
 
-def deliver(truck):
+def deliver(truck, time):
     delivered = []
     while len(delivered) < 16:
         distances = []
@@ -179,23 +194,35 @@ def deliver(truck):
             # Find the package with the smallest distance
             nearest = min(distances, key=lambda x: x[1])
 
+        nearestpackage = nearest[0]
+        nearestmileage = nearest[1]
+
+        # Calculate the time to deliver the package
+        duration = truck.calculateduration(nearestmileage)  # duration is in minutes
+        timedelta = datetime.timedelta(minutes=duration) # timedelta is in minutes
+        deliverytime = time + timedelta
+        difference = deliverytime - time
+        package.timedelivered = deliverytime
+        time += timedelta
+        print(f"Package {nearestpackage.id} will be delivered at {deliverytime.time()}")
+
+        print(f"{truck.name} traveled {nearest[1]} miles, in {difference} from {truck.address} to {nearest[0].address}")
+
         # Change truck address to the nearest package's address
-        truck.address = nearest[0].address
+        truck.address = nearestpackage.address
 
         # Increment the truck's mileage by the distance to the nearest package
-        truck.mileage += float(nearest[1])
-        print(f"{truck.name} traveled {nearest[1]} miles to {nearest[0].address}")
-        print(f"{truck.name} has traveled {truck.mileage} miles\n")
+        truck.mileage += float(nearestmileage)
 
         # Add nearest to delivered
-        delivered.append(nearest[0])
-        print(f"Package {nearest[0].id} has been delivered to {nearest[0].address}.\n")
+        delivered.append(nearestpackage)
+        print(f"Package {nearestpackage.id} has been delivered to {nearestpackage.address} at {package.timedelivered.time()}.\n")
 
         # Remove nearest from cargo
-        truck.removepackage(nearest[0])
+        truck.removepackage(nearestpackage)
 
         # Update package status to delivered
-        nearest[0].status = nearest[0].Status.DEL.value
+        nearestpackage.status = nearestpackage.Status.DEL.value
 
         # Remove nearest from distances
         distances.remove(nearest)
@@ -204,60 +231,60 @@ def deliver(truck):
 
 # Deliver packages
 for truck in fleet:
-    deliver(truck)
+    deliver(truck, time)
 
 
-def deliverpackages(truck, load, time):
-    while len(truck.cargo) > 0:
-        # Create packages and distances lists
-        list = []  # tuple: (package, distance)
-
-        # Find the distance between the truck and each package
-        for load in truck.cargo:
-            for package in load:
-                distance = Utils.findDistance(truck.address, package.address)
-                if distance is not None:
-                    list.append((package, distance))
-
-        # Find the package with the smallest distance
-        nearest = min(list, key=lambda x: x[1])
-        # Change truck address to the nearest package's address
-        truck.address = nearest[0].address
-
-        # Increment the truck's mileage by the distance to the nearest package
-        truck.mileage += nearest[1]
-
-        # Update the trucks coordinates
-        truck.coordinates = Utils.findCoordinates(truck.address)
-
-        # Update times
-        # Calculate the duration of the trip, in hours
-        duration = Utils.calculateduration(nearest[1])
-        # Convert the duration to minutes
-        inminutes = 60 * duration
-        # Convert the minutes to a timedelta object
-        duration = datetime.timedelta(minutes=inminutes)
-        # Add the duration to the time
-        time = time + duration
-
-        # Update the truck's time
-        truck.time += duration
-
-        # Deliver the package NEEDS WORK HERE !!!!!!!!!!!!!!!!!
-        for load in truck.cargo:
-            for package in load:
-                if package == nearest[0]:
-                    package.timedelivered = time
-                    package.status = "Delivered"
-                    load.remove(package)
-
-        # Remove from map
-        map.delete(nearest[0].id)
-
-        for load in truck.cargo:
-            for package in load:
-                path = (truck.address, truck.time, truck.coordinates)
-                package.footprint.append(path)
+# def deliverpackages(truck, load, time):
+#     while len(truck.cargo) > 0:
+#         # Create packages and distances lists
+#         list = []  # tuple: (package, distance)
+#
+#         # Find the distance between the truck and each package
+#         for load in truck.cargo:
+#             for package in load:
+#                 distance = Utils.findDistance(truck.address, package.address)
+#                 if distance is not None:
+#                     list.append((package, distance))
+#
+#         # Find the package with the smallest distance
+#         nearest = min(list, key=lambda x: x[1])
+#         # Change truck address to the nearest package's address
+#         truck.address = nearest[0].address
+#
+#         # Increment the truck's mileage by the distance to the nearest package
+#         truck.mileage += nearest[1]
+#
+#         # Update the trucks coordinates
+#         truck.coordinates = Utils.findCoordinates(truck.address)
+#
+#         # Update times
+#         # Calculate the duration of the trip, in hours
+#         duration = Utils.calculateduration(nearest[1])
+#         # Convert the duration to minutes
+#         inminutes = 60 * duration
+#         # Convert the minutes to a timedelta object
+#         duration = datetime.timedelta(minutes=inminutes)
+#         # Add the duration to the time
+#         time = time + duration
+#
+#         # Update the truck's time
+#         truck.time += duration
+#
+#         # Deliver the package NEEDS WORK HERE !!!!!!!!!!!!!!!!!
+#         for load in truck.cargo:
+#             for package in load:
+#                 if package == nearest[0]:
+#                     package.timedelivered = time
+#                     package.status = "Delivered"
+#                     load.remove(package)
+#
+#         # Remove from map
+#         map.delete(nearest[0].id)
+#
+#         for load in truck.cargo:
+#             for package in load:
+#                 path = (truck.address, truck.time, truck.coordinates)
+#                 package.footprint.append(path)
 
 
 # Worst Case: O(n^2)

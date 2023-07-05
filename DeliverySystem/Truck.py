@@ -29,16 +29,15 @@ class Truck:
     def updateTime(self, currenttime):
         self.time = currenttime
 
-    # def removepackage(self, deliveredpackage):
-    #     for packages in self.cargo:
-    #         for package in packages:
-    #             print(package)
-    #             if deliveredpackage == package:
-    #                 self.cargo.remove(package)
+    def calculateduration(self, distance):
+        speed = self.speed  # miles per hour
+        duration = distance / speed  # hours
+        duration = duration * 60  # minutes
+        return duration
+
     def removepackage(self, deliveredpackage):
         for packages in self.cargo:
             for package in packages:
                 if deliveredpackage == package:
                     packages.remove(package)
-        raise ValueError("list.remove(x): x not in list")
 
