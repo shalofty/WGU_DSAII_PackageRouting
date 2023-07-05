@@ -174,6 +174,7 @@ for truck in fleet:
             print(f"Package {package.id} has been loaded on {truck.name} and is out for delivery.")
 
 
+# deliver function which takes truck and time as parameters
 def deliver(truck, time):
     delivered = []
     while len(delivered) < 16:
@@ -206,7 +207,7 @@ def deliver(truck, time):
         time += timedelta
         print(f"Package {nearestpackage.id} will be delivered at {deliverytime.time()}")
 
-        print(f"{truck.name} traveled {nearest[1]} miles, in {difference} from {truck.address} to {nearest[0].address}")
+        print(f"{truck.name} traveled {nearestpackage} miles, in {difference} from {truck.address} to {nearestpackage.address}")
 
         # Change truck address to the nearest package's address
         truck.address = nearestpackage.address
