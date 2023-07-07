@@ -4,8 +4,6 @@
 from PackageMap import *
 from Fleet import *
 from Utils import *
-from Coords import coordinates
-from Truck import Truck
 
 import csv
 import datetime
@@ -44,7 +42,7 @@ canvas.create_image(0, 0, image=pmap, anchor=tk.NW)
 
 # generatePath function which takes currentcoordinates, nearestcoordinates, and color as parameters
 # and draws a line between the two coordinates for the GUI
-def generatePath(currentcoordinates, nearestcoordinates, color):
+def generatepath(currentcoordinates, nearestcoordinates, color):
     canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
 
 
@@ -195,22 +193,33 @@ def deliver(truck, time):
             # Find the package with the smallest distance
             nearest = min(distances, key=lambda x: x[1])
 
+        # Assign the nearest package and distance to variables for better readability
         nearestpackage = nearest[0]
         nearestmileage = nearest[1]
 
         # Calculate the time to deliver the package
         duration = truck.calculateduration(nearestmileage)  # duration is in minutes
-        timedelta = datetime.timedelta(minutes=duration) # timedelta is in minutes
-        deliverytime = time + timedelta
-        difference = deliverytime - time
-        package.timedelivered = deliverytime
-        time += timedelta
+        timedelta = datetime.timedelta(minutes=duration)  # timedelta is in minutes
+        deliverytime = time + timedelta  # delivery time
+        difference = deliverytime - time  # the difference between delivery time and global time
+        package.timedelivered = deliverytime  # set the package's delivery time to the delivery time
+        time += timedelta  # increment the global time by the timedelta
+
+        # Print statements for testing
         print(f"Package {nearestpackage.id} will be delivered at {deliverytime.time()}")
+        print(f"{truck.name} traveled {nearestmileage} miles to deliver {nearestpackage}, in {difference} from {truck.address} to {nearestpackage.address}")
 
-        print(f"{truck.name} traveled {nearestpackage} miles, in {difference} from {truck.address} to {nearestpackage.address}")
+        # Assign the nearest package's coordinates
+        nearestpackage.coordinates = map.findcoordinates(nearestpackage.address)
 
-        # Change truck address to the nearest package's address
+        # Create path for GUI map image
+        generatepath(truck.coordinates, nearestpackage.coordinates, "blue")
+
+        # Update truck address to the nearest package's address
         truck.address = nearestpackage.address
+
+        # Update the truck coordinates
+        truck.coordinates = map.findcoordinates(truck.address)
 
         # Increment the truck's mileage by the distance to the nearest package
         truck.mileage += float(nearestmileage)
@@ -226,7 +235,11 @@ def deliver(truck, time):
         nearestpackage.status = nearestpackage.Status.DEL.value
 
         # Remove nearest from distances
-        distances.remove(nearest)
+        for entry in distances:
+            print("Entry: ", entry)
+            if nearestpackage in entry:
+                print(f"Package {nearestpackage.id} has been removed from the list of distances.")
+                distances.remove(nearest)
     print(f"{truck.name} has delivered all packages.\n")
 
 
@@ -418,7 +431,7 @@ def updateTree(tree):
     ]
     # Insert the data into the tree view
     for i in packagedata:
-        if i[7] == "Docked at Station":
+        if i[7] == "Docked at Hub":
             tree.insert("", "end", values=i, tags="athub")
             tree.tag_configure('athub', background='yellow')
         if i[7] == "Processing":
@@ -476,19 +489,15 @@ searchbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 searchentry.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
-# truck1button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 30)
 truck1button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck2button = tk.Button(root, text="Truck 2", command=lambda: deliverPackages(truck2, "blue"))
-# truck2button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 60)
 truck2button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 truck3button = tk.Button(root, text="Truck 3", command=lambda: deliverPackages(truck3, "green"))
-# truck3button.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 90)
 truck3button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 calculationsbutton = tk.Button(root, text="Calculate", command=returnTripReport)
-# totalmileagebutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
 calculationsbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 root.mainloop()
