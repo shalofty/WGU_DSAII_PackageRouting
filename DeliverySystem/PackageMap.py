@@ -120,7 +120,7 @@ class PackageMap:
         self.unsorted = [[] for i in range(40)]  # list of all unsorted packages
         self.sorted = []  # list of all packages sorted by truck
         self.load(PackageMap.packagelist)  # add all packages to the map upon initialization
-        self.grouped, self.delayed, self.mislabeled, self.exclusive, self.deadline1030, self.deadlineEOD = [], [], [], [], [], []
+        self.grouped, self.delayed, self.mislabeled, self.exclusive, self.deadline1030, self.deadlineEOD, self.delivered = [], [], [], [], [], [], []
         self.process()  # process all packages upon initialization
         self.sorted.sort(key=lambda x: x[0])  # sort the packages by package id, for the sake of numerical sanity
 

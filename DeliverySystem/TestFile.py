@@ -203,6 +203,10 @@ def deliver(truck, time):
             packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
             print("Package " + str(package[0]) + " has been delivered.")
 
+    # add delivered packages to map.delivered
+    for package in delivered:
+        map.delivered.append(package)
+
 
 for truck in fleet.trucks:
     if "Truck 1" in truck.name:
@@ -221,6 +225,21 @@ for truck in fleet.trucks:
                 print(truck.name + " has delivered all packages.")
                 print("Total mileage: " + str(fleet.totalmileage))
                 break
+# Separate packages between map.sorted and map.delivered
+for package in map.delivered:
+    map.sorted.remove(package)
+for truck in fleet.trucks:
+    if "Truck 1" in truck.name:
+        for package in map.sorted:
+            truck.cargo.append(package)
+        while len(truck.cargo) > 0:
+            deliver(truck, gtime)
+            if len(truck.cargo) == 0:
+                fleet.totalmileage += truck.mileage
+                print(truck.name + " has delivered all packages.")
+                print("Total mileage: " + str(fleet.totalmileage))
+                break
+
 
 for truck in fleet.trucks:
     print(len(truck.cargo))
