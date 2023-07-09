@@ -1,5 +1,4 @@
 import datetime
-import Utils
 
 
 # Truck class to create Truck objects
@@ -35,9 +34,11 @@ class Truck:
         duration = duration * 60  # minutes
         return duration
 
+    def addpackage(self, package):
+        self.cargo.append(package)
+
     def removepackage(self, deliveredpackage):
         for packages in self.cargo:
             for package in packages:
                 if deliveredpackage == package:
                     packages.remove(package)
-

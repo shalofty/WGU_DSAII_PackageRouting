@@ -3,21 +3,23 @@
 
 from PackageMap import *
 from Fleet import *
-from Utils import *
 
-import csv
 import datetime
 import tkinter as tk
 from tkinter import ttk
 
-# Creating a PackageMap object and loading the package list
+# Creating a PackageMap object
 map = PackageMap()
-list = map.packagelist
-map.add(list)
-packages = map.packages
 
-# Setting time to 8:00 AM
+# Setting global time to 8:00 AM, time won't increment until packages start being delivered
+# Also updated the times to datetime types to enable incrementing, because the task guidelines
+# explicitly state not to use any additional libraries in the PackageMap class. Why?
+# So they can see how creative we can be, right? Right..
 time = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
+gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
+for package in map.sorted:
+    id = package[0]
+    map.updatetime(id, gtime.time())
 
 # GUI Settings
 WINDOW_TITLE = "Package Delivery System"
@@ -46,137 +48,84 @@ def generatepath(currentcoordinates, nearestcoordinates, color):
     canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
 
 
-# Function which populates a HashTable with data from the Package File.
-# An improvement to the code would be to have to buildTable function inside the HashMap class
-# But the constraints of building the HashMap class per the PA state not to use any libraries or packages
-def sortload(truck):
-    # Remove packages from exceptions (map.priority, map.exclusive, etc) and add to load []
-    # Don't remove packages from map.packages
-    try:
-        # Determine if this is the last load by comparing the number of packages left in the map to the truck capacity
-        lastload = False
-        if len(map.packages) <= truck.capacity:
-            lastload = True
+def loadtruck(truck, time):
+    OFD = "Out for Delivery"
 
-        # Sort exceptions and create a list of sorted packages
-        map.sortexceptions()
-        sorted = []
-        # sort load while len(sorted) < truck.capacity or on lastload
-        while len(sorted) < truck.capacity or lastload:
+    # Add packages that are exclusive to truck 2
+    # This will only happen after the first truck is already filled
+    for package in map.exclusive:
+        if len(truck.cargo) == truck.capacity or len(map.exclusive) == 0:
+            break
+        if "Truck 2" in truck.name:
+            # add exclusive packages to truck
+            truck.addpackage(package)
+            # update package status to "Out for Delivery"
+            map.updatestatus(package[0], OFD)
 
-            # Delayed packages
-            for package in map.packages:
-                # Only sort through undelivered packages
-                # Use timedelta to create delay time for delayed packages
-                if package.delayed:
-                    # Calculate delay time for comparison
-                    minutesdelayed = package.delay
-                    timedelta = datetime.timedelta(minutes=minutesdelayed)
-                    delaytime = time + timedelta
-                    # print(f"Package {package.id} is delayed until {delaytime.time()}")
-                if len(sorted) == truck.capacity:
-                    return sorted
+    # Add grouped packages first, since package 15 has the earliest deadline
+    for package in map.grouped:
+        if len(truck.cargo) == truck.capacity or len(map.grouped) == 0:
+            break
+        # add grouped packages to truck
+        truck.addpackage(package)
+        # update package status to "Out for Delivery"
+        map.updatestatus(package[0], OFD)
 
-            # Grouped
-            for package in map.packages:
-                # Sort out delays
-                if package.delayed:
-                    minutesdelayed = package.delay
-                    timedelta = datetime.timedelta(minutes=minutesdelayed)
-                    delaytime = time + timedelta
-                    # If time is greater than or equal to delaytime, add to load
-                    if time >= delaytime:
-                        sorted.append(package)
-                        map.delayed.remove(package)
-                # Add group packages to load first
-                if package.group:
-                    # Add to load
-                    sorted.append(package)
-                    map.grouped.remove(package)
-                    # print(f"Package {package.id} is a group package. It has been loaded.")
+    # Next check the mislabeled package
+    for package in map.mislabeled:
+        if len(truck.cargo) == truck.capacity or len(map.mislabeled) == 0:
+            break
+        delay = package[10]
+        timedelta = datetime.timedelta(minutes=delay)
+        delaytime = gtime + timedelta
+        if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+            # add mislabeled package to truck
+            truck.addpackage(package)
+            # update package status to "Out for Delivery"
+            map.updatestatus(package[0], OFD)
 
-                if len(sorted) == truck.capacity:
-                    return sorted
+    # Next check delays
+    for package in map.delayed:
+        if len(truck.cargo) == truck.capacity or len(map.delayed) == 0:
+            break
+        delay = package[10]
+        timedelta = datetime.timedelta(minutes=delay)
+        delaytime = gtime + timedelta
+        if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+            # add delayed packages to truck
+            truck.addpackage(package)
+            # update package status to "Out for Delivery"
+            map.updatestatus(package[0], OFD)
 
-            # Exclusive/Priority
-            for package in map.packages:
-                # Sort out delays
-                if package.delayed:
-                    minutesdelayed = package.delay
-                    timedelta = datetime.timedelta(minutes=minutesdelayed)
-                    delaytime = time + timedelta
-                    # If time is greater than or equal to delaytime, add to load
-                    if time >= delaytime:
-                        sorted.append(package)
-                        map.delayed.remove(package)
-                # Remove exclusive packages from priority list
-                if package.exclusive and package.priority:
-                    if "Truck 2" not in truck.name:
-                        map.priority.remove(package)
-                        # print(f"Package {package.id} is an exclusive package, but not for {truck.name}")
-                    elif "Truck 2" in truck.name:
-                        sorted.append(package)
-                        map.priority.remove(package)
-                        map.exclusive.remove(package)
-                        # print(f"Package {package.id} is an exclusive package. It has been loaded.")
+    # Next check packages with 10:30 deadline
+    for package in map.packages1030:
+        if len(truck.cargo) == truck.capacity or len(map.packages1030) == 0:
+            break
+        # add packages with 10:30 deadline to truck
+        truck.addpackage(package)
+        # update package status to "Out for Delivery"
+        map.updatestatus(package[0], OFD)
 
-                    if len(sorted) == truck.capacity:
-                        return sorted
-
-            # Mislabeled
-            for package in map.packages:
-                # Handle mislabeled package
-                if package.mislabel and package.priority:
-                    if time < delaytime:
-                        map.priority.remove(package)
-                        map.delayed.append(package)
-                        # print(f"Package {package.id} is mislabeled. It has been removed from priority list.")
-                    else:
-                        # Correct address for package 9
-                        # Note: "No match found for address" error when parsing distance table till after time
-                        package.address = "410 S State St"
-                        package.city = "Salt Lake City"
-                        package.state = "UT"
-                        package.zipcode = "84111"
-
-                        sorted.append(package)
-                        map.mislabel.remove(package)
-                        # print(f"Package {package.id} label has been corrected. It has been loaded.")
-
-                    if len(sorted) == truck.capacity:
-                        return sorted
-
-            # Priority
-            for package in map.packages:
-                # Add priority packages to load
-                if package.priority:
-                    sorted.append(package)
-                    map.priority.remove(package)
-                    # print(f"Package {package.id} is a priority package")
-
-                if len(sorted) == truck.capacity:
-                    return sorted
-
-    except csv.Error as e:  # Catch any csv errors
-        # Print an error message if there's a problem with the csv data
-        print("Error building table")
+    # Next check packages with EOD deadline
+    for package in map.packagesEOD:
+        if len(truck.cargo) == truck.capacity or len(map.packagesEOD) == 0:
+            break
+        # add packages with EOD deadline to truck
+        truck.addpackage(package)
+        # update package status to "Out for Delivery"
+        map.updatestatus(package[0], OFD)
 
 
 # Sort packages into truck loads, change package status to "Out for delivery"
 for truck in fleet:
-    load = sortload(truck)
-    truck.cargo.append(load)
-    for packages in truck.cargo:
-        for package in packages:
-            package.status = package.Status.OUT.value
-            print(f"Package {package.id} has been loaded on {truck.name} and is out for delivery.")
+    loadtruck(truck, time)  # load is a list of packages
 
 
 # deliver function which takes truck and time as parameters
 def deliver(truck, time):
     delivered = []
+    distances = []
     while len(delivered) < 16:
-        distances = []
 
         # Find the nearest neighbor
         for packages in truck.cargo:
@@ -212,8 +161,12 @@ def deliver(truck, time):
         # Assign the nearest package's coordinates
         nearestpackage.coordinates = map.findcoordinates(nearestpackage.address)
 
-        # Create path for GUI map image
-        generatepath(truck.coordinates, nearestpackage.coordinates, "blue")
+        if truck.name == "Truck 1":
+            # Create path for GUI map image
+            generatepath(truck.coordinates, nearestpackage.coordinates, "red")
+        if truck.name == "Truck 2":
+            # Create path for GUI map image
+            generatepath(truck.coordinates, nearestpackage.coordinates, "blue")
 
         # Update truck address to the nearest package's address
         truck.address = nearestpackage.address
@@ -236,10 +189,13 @@ def deliver(truck, time):
 
         # Remove nearest from distances
         for entry in distances:
-            print("Entry: ", entry)
             if nearestpackage in entry:
                 print(f"Package {nearestpackage.id} has been removed from the list of distances.")
-                distances.remove(nearest)
+                distances.remove(entry)
+
+        # Remove the package from map
+        map.delete(nearestpackage.id)
+        print(f"Package {nearestpackage.id} has been removed from the map.\n")
     print(f"{truck.name} has delivered all packages.\n")
 
 

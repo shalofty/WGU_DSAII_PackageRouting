@@ -1,3 +1,4 @@
+from PackageMap import *
 from enum import Enum
 
 
@@ -6,7 +7,6 @@ class Package:
     # Nested class for Package Status. Improves organization and encapsulation.
     class Status(Enum):
         HUB = "Docked at Hub"
-        PRO = "Processing"
         OUT = "Out for Delivery"
         DEL = "Delivered"
 
@@ -19,7 +19,7 @@ class Package:
         self.zipcode = zipcode
         self.deadline = deadline
         self.weight = weight
-        self.status = Package.Status.HUB.value  # everything starts at the Hub
+        self.status = Package.Status.HUB.value  # everything starts at the Hub ;)
         self.note = note
         self.coordinates = None
         self.delay = None
