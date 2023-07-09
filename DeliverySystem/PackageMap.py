@@ -223,7 +223,7 @@ class PackageMap:
         # I found the best approach was to do this iteratively, removing packages from map.packages as they are sorted
         # This is because some packages have multiple important attributes, and some exceptions are more important than others
 
-        groupedids = [13, 14, 15, 16, 19, 20]  # package ids that must be delivered together
+        groupedids = [3, 5, 13, 14, 15, 16, 19, 20, 21, 33, 37, 39]  # package ids that must be delivered together
 
         # delayed = []  # packages delayed on flight
         # mislabeled = []  # package with wrong address
