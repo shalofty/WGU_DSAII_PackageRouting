@@ -15,8 +15,6 @@ class Fleet:
     def add(self, truck):
         self.trucks.append(truck)
 
-    def remove(self, truck):
-        self.trucks.remove(truck)
 
 # Create Fleet of trucks
 fleet = Fleet()

@@ -98,8 +98,8 @@ def loadtruck(truck, time):
             map.updatestatus(package[0], OFD)
 
     # Next check packages with 10:30 deadline
-    for package in map.packages1030:
-        if len(truck.cargo) == truck.capacity or len(map.packages1030) == 0:
+    for package in map.deadline1030:
+        if len(truck.cargo) == truck.capacity or len(map.deadline1030) == 0:
             break
         # add packages with 10:30 deadline to truck
         truck.addpackage(package)
@@ -107,8 +107,8 @@ def loadtruck(truck, time):
         map.updatestatus(package[0], OFD)
 
     # Next check packages with EOD deadline
-    for package in map.packagesEOD:
-        if len(truck.cargo) == truck.capacity or len(map.packagesEOD) == 0:
+    for package in map.deadlineEOD:
+        if len(truck.cargo) == truck.capacity or len(map.deadlineEOD) == 0:
             break
         # add packages with EOD deadline to truck
         truck.addpackage(package)

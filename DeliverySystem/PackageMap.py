@@ -120,10 +120,21 @@ class PackageMap:
         self.unsorted = [[] for i in range(40)]  # list of all unsorted packages
         self.sorted = []  # list of all packages sorted by truck
         self.load(PackageMap.packagelist)  # add all packages to the map upon initialization
-        self.assigncoordinates()  # assign coordinates to all packages upon initialization
-        self.grouped, self.delayed, self.mislabeled, self.exclusive, self.packages1030, self.packagesEOD = self.process()  # process all packages upon initialization
+        self.grouped, self.delayed, self.mislabeled, self.exclusive, self.deadline1030, self.deadlineEOD = [], [], [], [], [], []
+        self.process()  # process all packages upon initialization
         self.sorted.sort(key=lambda x: x[0])  # sort the packages by package id, for the sake of numerical sanity
+
         # now packages are processed
+        # print statements to show the length of each list and the sum of all the lengths
+        # 6, 4, 1, 4, 7, 18, 40
+        # print("Length of grouped: ", len(self.grouped))
+        # print("Length of delayed: ", len(self.delayed))
+        # print("Length of mislabeled: ", len(self.mislabeled))
+        # print("Length of exclusive: ", len(self.exclusive))
+        # print("Length of packages1030: ", len(self.deadline1030))
+        # print("Length of packagesEOD: ", len(self.deadlineEOD))
+        # print the sum of all the lengths
+        # print("Sum of all lengths: ", len(self.grouped) + len(self.delayed) + len(self.mislabeled) + len(self.exclusive) + len(self.deadline1030) + len(self.deadlineEOD))
 
     # findindex function uses linear probing to find the index of a package in the list
     @staticmethod
@@ -211,21 +222,20 @@ class PackageMap:
 
         groupedids = [13, 14, 15, 16, 19, 20]  # package ids that must be delivered together
 
-        delayed = []  # packages delayed on flight
-        mislabeled = []  # package with wrong address
-        exclusive = []  # packages only on truck 2
-        grouped = []  # packages that must be delivered together
-        packages1030 = []  # packages with 10:30 deadline
-        packages900 = []  # packages with 9:00 deadline
-        packagesEOD = []  # packages with no deadline
+        # delayed = []  # packages delayed on flight
+        # mislabeled = []  # package with wrong address
+        # exclusive = []  # packages only on truck 2
+        # grouped = []  # packages that must be delivered together
+        # deadline1030 = []  # packages with 10:30 deadline
+        # deadlineEOD = []  # packages with no deadline
 
         # remove grouped packages from map.packages and add to grouped list
         for ids in groupedids:
             for package in self.unsorted:
                 if package[0] == ids:
-                    grouped.append(package)
+                    self.grouped.append(package)
 
-        for package in grouped:
+        for package in self.grouped:
             # Update status to "Processed"
             package[8] = ("Processed", "8:00 AM")
             # Find the index of the package to be inserted
@@ -238,32 +248,32 @@ class PackageMap:
         for package in self.unsorted:
             note = package[7]
             if "Delayed on flight" in note:
-                delayed.append(package)
+                self.delayed.append(package)
                 package[10] = 65  # delayed until 9:05, 65 mintues after 8:00
                 package[8] = ("Delayed on flight, expected arrival is 9:05 AM", "8:00 AM")
             if "Wrong address listed" in note:
-                mislabeled.append(package)
+                self.mislabeled.append(package)
                 package[10] = 140  # delayed until 10:20, 140 minutes after 8:00
                 package[8] = ("Wrong address listed, delayed until corrected.", "8:00 AM")
             if "Can only be on truck 2" in note:
-                exclusive.append(package)
+                self.exclusive.append(package)
                 package[8] = ("Processed at sort facility", "8:00 AM")
 
-        for package in delayed:
+        for package in self.delayed:
             # Find the index of the package to be inserted
             # index = hash(package[0]) % len(self.unsorted)
             index = self.findindex(package[0], self.unsorted)
             self.sorted.insert(index, package)  # insert the package into the sorted list
             self.unsorted.pop(index)  # remove the package from the unsorted list
 
-        for package in mislabeled:
+        for package in self.mislabeled:
             # Find the index of the package to be inserted
             # index = hash(package[0]) % len(self.unsorted)
             index = self.findindex(package[0], self.unsorted)
             self.sorted.insert(index, package)  # insert the package into the sorted list
             self.unsorted.pop(index)  # remove the package from the unsorted list
 
-        for package in exclusive:
+        for package in self.exclusive:
             # Find the index of the package to be inserted
             # index = hash(package[0]) % len(self.unsorted)
             index = self.findindex(package[0], self.unsorted)
@@ -275,27 +285,20 @@ class PackageMap:
         for package in self.unsorted:
             deadline = package[5]
             if "10:30 AM" in deadline:
-                packages1030.append(package)
+                self.deadline1030.append(package)
                 package[8] = ("Processed at sort facility, expected arrival before 10:30 AM", "8:00 AM")
             if "EOD" in deadline:
-                packagesEOD.append(package)
+                self.deadlineEOD.append(package)
                 package[8] = ("Processed at sort facility, expected arrival before 5:00 PM", "8:00 AM")
 
-        for package in packages1030:
+        for package in self.deadline1030:
             # Find the index of the package to be inserted
             # index = hash(package[0]) % len(self.unsorted)
             index = self.findindex(package[0], self.unsorted)
             self.sorted.insert(index, package)  # insert the package into the sorted list
             self.unsorted.pop(index)  # remove the package from the unsorted list
 
-        # for package in packages900:
-        #     # Find the index of the package to be inserted
-        #     # index = hash(package[0]) % len(self.unsorted)
-        #     index = self.findindex(package[0], self.unsorted)
-        #     self.sorted.insert(index, package)  # insert the package into the sorted list
-        #     self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        for package in packagesEOD:
+        for package in self.deadlineEOD:
             # Find the index of the package to be inserted
             # index = hash(package[0]) % len(self.unsorted)
             index = self.findindex(package[0], self.unsorted)
@@ -303,7 +306,7 @@ class PackageMap:
             self.unsorted.pop(index)  # remove the package from the unsorted list
 
         # All packages should be sorted at this point, return them
-        return grouped, delayed, mislabeled, exclusive, packages1030, packagesEOD
+        # return grouped, delayed, mislabeled, exclusive, deadline1030, deadlineEOD
 
     # End of PackageMap class
 
@@ -326,11 +329,18 @@ def calculatedistance(currentaddress, destinationaddress):
 
     currentindex = None
     destinationindex = None
+
+    # print("Current Address: ", repr(currentaddress))
+    # print("Destination Address: ", repr(destinationaddress))
+
     for address in PackageMap.addresslist:
-        if currentaddress == address[2]:
-            currentindex = address[0]
-        if destinationaddress == address[2]:
-            destinationindex = address[0]
+        splitstring = address.split(',')  # split the address
+        streetaddress = splitstring[2]  # get the street address
+        addressindex = splitstring[0]  # get the index of the address in the addresslist
+        if currentaddress in streetaddress:
+            currentindex = int(addressindex)
+        if destinationaddress in streetaddress:
+            destinationindex = int(addressindex)
     if currentindex > destinationindex:
         distance = distancetable[currentindex][destinationindex]
         return distance
