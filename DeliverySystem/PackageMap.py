@@ -182,11 +182,14 @@ class PackageMap:
         index = hash(id) % len(self.sorted) - 1
         return self.sorted[index][1]
 
-    def updateaddress(self, id, address):
+    def updateaddress(self, id, address, city, state, zip):
         # find the index of the package to update
         index = hash(id) % len(self.sorted) - 1
         self.sorted[index][1] = address
-        print('Package', id, 'address updated to', address)
+        self.sorted[index][2] = city
+        self.sorted[index][3] = state
+        self.sorted[index][4] = zip
+        print('Package', id, 'address updated.')
 
     def updatetime(self, id, time):
         # find the index of the package to update
@@ -251,10 +254,18 @@ class PackageMap:
                 self.delayed.append(package)
                 package[10] = 65  # delayed until 9:05, 65 mintues after 8:00
                 package[8] = ("Delayed on flight, expected arrival is 9:05 AM", "8:00 AM")
+            # Because package 26 is delayed, it only makes sense to deliver 26 with it to save mileage
+            # So remove 26 from unsorted and add it to delayed
+            # The deadline for 26 is EOD so this is OK
+            # Other packages that can be handled like this are 31, 33
+            if package[0] == 26:
+                self.delayed.append(package)
+                package[10] = 65
             if "Wrong address listed" in note:
                 self.mislabeled.append(package)
                 package[10] = 140  # delayed until 10:20, 140 minutes after 8:00
                 package[8] = ("Wrong address listed, delayed until corrected.", "8:00 AM")
+            # Package 37 deadline is 10:30, 5 is EOD, both can be shipped on truck 2 with 38
             if "Can only be on truck 2" in note:
                 self.exclusive.append(package)
                 package[8] = ("Processed at sort facility", "8:00 AM")

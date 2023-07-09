@@ -50,7 +50,10 @@ def generatepath(currentcoordinates, nearestcoordinates, color):
 
 def sortload(truck, time):
     OFD = "Out for Delivery"
-    while len(truck.cargo) < truck.capacity:
+    lastload = False
+    while len(truck.cargo) < truck.capacity or lastload:
+        if (40 - len(map.delivered)) < truck.capacity:
+            lastload = True
         # Add packages that are exclusive to truck 2
         # This will only happen after the first truck is already filled
         for package in map.exclusive:
@@ -94,7 +97,13 @@ def sortload(truck, time):
             delay = package[10]
             timedelta = datetime.timedelta(minutes=delay)
             delaytime = gtime + timedelta
-            if testtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+            if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+                # Update the label if it's past 10:20 AM
+                updatedaddress = "410 S State St"
+                updatedcity = "Salt Lake City"
+                updatedstate = "UT"
+                updatedzip = "84111"
+                map.updateaddress(package[0], updatedaddress, updatedcity, updatedstate, updatedzip)
                 # add mislabeled package to truck
                 truck.addpackage(package)
                 # update package status to "Out for Delivery"
@@ -113,7 +122,7 @@ def sortload(truck, time):
             delay = package[10]
             timedelta = datetime.timedelta(minutes=delay)
             delaytime = gtime + timedelta
-            if testtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+            if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
                 # add delayed packages to truck
                 truck.addpackage(package)
                 # update package status to "Out for Delivery"
@@ -224,6 +233,11 @@ def deliver(truck, time):
     # update truck mileage
     truck.mileage += nearestdistance
 
+    # update time
+    duration = truck.calculateduration(nearestdistance)
+    timedelta = datetime.timedelta(minutes=duration)
+    time += timedelta
+
     # update package status to delivered
     for package in truck.cargo:
         if package[1] == truck.address:
@@ -231,7 +245,7 @@ def deliver(truck, time):
             delivered.append(package)  # add package to delivered list
             truck.cargo.remove(package)  # remove package from truck cargo
             packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
-            print("Package " + str(package[0]) + " has been delivered.")
+            print("Package " + str(package[0]) + " has been delivered at " + str(time))
 
     # add delivered packages to map.delivered
     for package in delivered:
