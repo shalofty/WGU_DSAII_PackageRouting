@@ -341,6 +341,9 @@ def calculatedistance(currentaddress, destinationaddress):
             currentindex = int(addressindex)
         if destinationaddress in streetaddress:
             destinationindex = int(addressindex)
+
+    if currentindex == destinationindex:  # if the addresses are the same, return 0, very important detail
+        return 0
     if currentindex > destinationindex:
         distance = distancetable[currentindex][destinationindex]
         return distance

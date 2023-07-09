@@ -183,25 +183,25 @@ def deliver(truck, time):
     nearestaddress = nearestpackage[1]
     nearestdistance = nearest[1]
 
-    print("The nearest package is " + str(nearestpackage[0]) + " at " + nearestaddress + " which is " + str(nearestdistance) + " miles away.")
+    # print("The nearest package is " + str(nearestpackage[0]) + " at " + nearestaddress + " which is " + str(nearestdistance) + " miles away.")
 
     # Send truck to nearest address
     truck.address = nearestaddress
-    print("Truck " + truck.name + " is now at " + truck.address)
+    # print("Truck " + truck.name + " is now at " + truck.address)
 
     # update truck mileage
     truck.mileage += nearestdistance
-    print("Truck " + truck.name + " has driven " + str(truck.mileage) + " miles.")
-    print("Truck mileage: " + str(truck.mileage))
+    # print("Truck " + truck.name + " has driven " + str(truck.mileage) + " miles.")
+    # print("Truck mileage: " + str(truck.mileage))
 
     # update package status to delivered
     for package in truck.cargo:
         if package[1] == truck.address:
-            package[8] = ("Delivered", time)
-            delivered.append(package)
-            truck.cargo.remove(package)
+            package[8] = ("Delivered", time)  # update package status to delivered
+            delivered.append(package)  # add package to delivered list
+            truck.cargo.remove(package)  # remove package from truck cargo
+            packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
             print("Package " + str(package[0]) + " has been delivered.")
-
 
 
 for truck in fleet.trucks:
@@ -209,14 +209,18 @@ for truck in fleet.trucks:
         while len(truck.cargo) > 0:
             deliver(truck, gtime)
             if len(truck.cargo) == 0:
+                fleet.totalmileage += truck.mileage
                 print(truck.name + " has delivered all packages.")
+                print("Total mileage: " + str(fleet.totalmileage))
                 break
-    # if "Truck 2" in truck.name:
-    #     while len(truck.cargo) > 0:
-    #         deliver(truck, gtime)
-    #         if len(truck.cargo) == 0:
-    #             print(truck.name + " has delivered all packages.")
-    #             break
+    if "Truck 2" in truck.name:
+        while len(truck.cargo) > 0:
+            deliver(truck, gtime)
+            if len(truck.cargo) == 0:
+                fleet.totalmileage += truck.mileage
+                print(truck.name + " has delivered all packages.")
+                print("Total mileage: " + str(fleet.totalmileage))
+                break
 
 for truck in fleet.trucks:
     print(len(truck.cargo))
