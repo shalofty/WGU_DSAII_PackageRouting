@@ -219,6 +219,13 @@ def deliver(truck, time):
     for package in delivered:
         map.delivered.append(package)
 
+    # when truck is empty, return to hub
+    if len(truck.cargo) == 0:
+        # update truck address to hub
+        truck.address = "4001 South 700 East"
+        # update truck coordinates to hub coordinates
+        truck.coordinates = [397, 456]
+
 
 for truck in fleet.trucks:
     if "Truck 1" in truck.name:
