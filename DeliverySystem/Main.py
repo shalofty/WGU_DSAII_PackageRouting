@@ -15,8 +15,8 @@ map = PackageMap()
 # Also updated the times to datetime types to enable incrementing, because the task guidelines
 # explicitly state not to use any additional libraries in the PackageMap class. Why?
 # So they can see how creative we can be, right? Right..
-time = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
 gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
+testtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
 for package in map.sorted:
     id = package[0]
     map.updatetime(id, gtime.time())
@@ -48,274 +48,232 @@ def generatepath(currentcoordinates, nearestcoordinates, color):
     canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
 
 
-def loadtruck(truck, time):
+def sortload(truck, time):
     OFD = "Out for Delivery"
+    while len(truck.cargo) < truck.capacity:
+        # Add packages that are exclusive to truck 2
+        # This will only happen after the first truck is already filled
+        for package in map.exclusive:
+            if len(truck.cargo) == truck.capacity or len(map.exclusive) == 0:
+                if len(map.exclusive) == 0:
+                    print("All exclusive packages have been loaded.")
+                elif len(map.exclusive) > 0:
+                    print("There are still " + str(len(map.exclusive)) + " exclusive packages left.")
+                break
+            if "Truck 2" in truck.name:
+                # add exclusive packages to truck
+                truck.addpackage(package)
+                # update package status to "Out for Delivery"
+                map.updatestatus(package[0], OFD)
+                # remove package from exclusive list
+                map.exclusive.remove(package)
 
-    # Add packages that are exclusive to truck 2
-    # This will only happen after the first truck is already filled
-    for package in map.exclusive:
-        if len(truck.cargo) == truck.capacity or len(map.exclusive) == 0:
-            break
-        if "Truck 2" in truck.name:
-            # add exclusive packages to truck
+        # Add grouped packages first, since package 15 has the earliest deadline
+        for package in map.grouped:
+            if len(truck.cargo) == truck.capacity or len(map.grouped) == 0:
+                if len(map.grouped) == 0:
+                    print("All grouped packages have been loaded.")
+                elif len(map.grouped) > 0:
+                    print("There are still " + str(len(map.grouped)) + " grouped packages left.")
+                break
+            # add grouped packages to truck
             truck.addpackage(package)
             # update package status to "Out for Delivery"
             map.updatestatus(package[0], OFD)
+            # remove package from grouped list
+            map.grouped.remove(package)
 
-    # Add grouped packages first, since package 15 has the earliest deadline
-    for package in map.grouped:
-        if len(truck.cargo) == truck.capacity or len(map.grouped) == 0:
-            break
-        # add grouped packages to truck
-        truck.addpackage(package)
-        # update package status to "Out for Delivery"
-        map.updatestatus(package[0], OFD)
+        # Next check the mislabeled package
+        for package in map.mislabeled:
+            if len(truck.cargo) == truck.capacity or len(map.mislabeled) == 0:
+                if len(map.mislabeled) == 0:
+                    print("All mislabeled packages have been loaded.")
+                elif len(map.mislabeled) > 0:
+                    print("There are still " + str(len(map.mislabeled)) + " mislabeled packages left.")
+                break
+            delay = package[10]
+            timedelta = datetime.timedelta(minutes=delay)
+            delaytime = gtime + timedelta
+            if testtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+                # add mislabeled package to truck
+                truck.addpackage(package)
+                # update package status to "Out for Delivery"
+                map.updatestatus(package[0], OFD)
+                # remove package from mislabeled list
+                map.mislabeled.remove(package)
 
-    # Next check the mislabeled package
-    for package in map.mislabeled:
-        if len(truck.cargo) == truck.capacity or len(map.mislabeled) == 0:
-            break
-        delay = package[10]
-        timedelta = datetime.timedelta(minutes=delay)
-        delaytime = gtime + timedelta
-        if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
-            # add mislabeled package to truck
+        # Next check delays
+        for package in map.delayed:
+            if len(truck.cargo) == truck.capacity or len(map.delayed) == 0:
+                if len(map.delayed) == 0:
+                    print("All delayed packages have been loaded.")
+                elif len(map.delayed) > 0:
+                    print("There are still " + str(len(map.delayed)) + " delayed packages left.")
+                break
+            delay = package[10]
+            timedelta = datetime.timedelta(minutes=delay)
+            delaytime = gtime + timedelta
+            if testtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+                # add delayed packages to truck
+                truck.addpackage(package)
+                # update package status to "Out for Delivery"
+                map.updatestatus(package[0], OFD)
+                # remove package from delayed list
+                map.delayed.remove(package)
+
+        # Next check packages with 10:30 deadline
+        for package in map.deadline1030:
+            if len(truck.cargo) == truck.capacity or len(map.deadline1030) == 0:
+                if len(map.deadline1030) == 0:
+                    print("All 10:30 packages have been loaded.")
+                elif len(map.deadline1030) > 0:
+                    print("There are still " + str(len(map.deadline1030)) + " 10:30 deadline packages left.")
+                break
+            # add packages with 10:30 deadline to truck
             truck.addpackage(package)
             # update package status to "Out for Delivery"
             map.updatestatus(package[0], OFD)
+            # remove package from packages1030 list
+            map.deadline1030.remove(package)
 
-    # Next check delays
-    for package in map.delayed:
-        if len(truck.cargo) == truck.capacity or len(map.delayed) == 0:
-            break
-        delay = package[10]
-        timedelta = datetime.timedelta(minutes=delay)
-        delaytime = gtime + timedelta
-        if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
-            # add delayed packages to truck
+        # Next check packages with EOD deadline
+        for package in map.deadlineEOD:
+            if len(truck.cargo) == truck.capacity or len(map.deadlineEOD) == 0:
+                if len(map.deadlineEOD) == 0:
+                    print("All EOD packages have been loaded.")
+                elif len(map.deadlineEOD) > 0:
+                    print("There are still " + str(len(map.deadlineEOD)) + " EOD deadline packages left.")
+                break
+            # add packages with EOD deadline to truck
             truck.addpackage(package)
             # update package status to "Out for Delivery"
             map.updatestatus(package[0], OFD)
-
-    # Next check packages with 10:30 deadline
-    for package in map.deadline1030:
-        if len(truck.cargo) == truck.capacity or len(map.deadline1030) == 0:
-            break
-        # add packages with 10:30 deadline to truck
-        truck.addpackage(package)
-        # update package status to "Out for Delivery"
-        map.updatestatus(package[0], OFD)
-
-    # Next check packages with EOD deadline
-    for package in map.deadlineEOD:
-        if len(truck.cargo) == truck.capacity or len(map.deadlineEOD) == 0:
-            break
-        # add packages with EOD deadline to truck
-        truck.addpackage(package)
-        # update package status to "Out for Delivery"
-        map.updatestatus(package[0], OFD)
+            # remove package from packagesEOD list
+            map.deadlineEOD.remove(package)
 
 
-# Sort packages into truck loads, change package status to "Out for delivery"
-for truck in fleet:
-    loadtruck(truck, time)  # load is a list of packages
+def trucks():
+    for truck in fleet.trucks:
+        sortload(truck, gtime)
+    return fleet
 
 
-# deliver function which takes truck and time as parameters
+# Load trucks in fleet
+fleet = trucks()
+
+# Checking loads of each truck in the fleet
+# for truck in fleet.trucks:
+#     print(truck.name + " cargo:")
+#     for index, package in enumerate(truck.cargo):
+#         print((index + 1), package)
+
+# Current output:
+# Truck 1 cargo:
+# 1 [13, '2010 W 500 S', 'Salt Lake City', 'UT', '84104', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 2 [15, '4580 S 2300 E', 'Holladay', 'UT', '84117', '9:00 AM', '4 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 3 [19, '177 W Price Ave', 'Salt Lake City', 'UT', '84115', 'EOD', '37 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 4 [9, '300 State St', 'Salt Lake City', 'UT', '84103', 'EOD', '2 Kilos', "'Wrong address listed'", ('Out for Delivery', datetime.time(8, 0)), None, 140]
+# 5 [6, '3060 Lester St', 'West Valley City', 'UT', '84119', '10:30 AM', '88 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
+# 6 [28, '2835 Main St', 'Salt Lake City', 'UT', '84115', 'EOD', '7 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
+# 7 [40, '380 W 2880 S', 'Salt Lake City', 'UT', '84115', '10:30 AM', '45 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 8 [29, '1330 2100 S', 'Salt Lake City', 'UT', '84106', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 9 [31, '3365 S 900 W', 'Salt Lake City', 'UT', '84119', '10:30 AM', '1 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 10 [37, '410 S State St', 'Salt Lake City', 'UT', '84111', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 11 [2, '2530 S 500 E', 'Salt Lake City', 'UT', '84106', 'EOD', '44 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 12 [5, '410 S State St', 'Salt Lake City', 'UT', '84111', 'EOD', '5 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 13 [8, '300 State St', 'Salt Lake City', 'UT', '84103', 'EOD', '9 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 14 [11, '2600 Taylorsville Blvd', 'Salt Lake City', 'UT', '84118', 'EOD', '1 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 15 [17, '3148 S 1100 W', 'Salt Lake City', 'UT', '84119', 'EOD', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 16 [22, '6351 South 900 East', 'Murray', 'UT', '84121', 'EOD', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# Truck 2 cargo:
+# 1 [3, '233 Canyon Rd', 'Salt Lake City', 'UT', '84103', 'EOD', '2 Kilos', "'Can only be on truck 2'", ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 2 [36, '2300 Parkway Blvd', 'West Valley City', 'UT', '84119', 'EOD', '88 Kilos', "'Can only be on truck 2'", ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 3 [14, '4300 S 1300 E', 'Millcreek', 'UT', '84117', '10:30 AM', '88 Kilos', "'Must be delivered with 15", ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 4 [20, '3595 Main St', 'Salt Lake City', 'UT', '84115', '10:30 AM', '37 Kilos', "'Must be delivered with 13", ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 5 [25, '5383 South 900 East #104', 'Salt Lake City', 'UT', '84117', '10:30 AM', '7 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
+# 6 [1, '195 W Oakland Ave', 'Salt Lake City', 'UT', '84115', '10:30 AM', '21 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 7 [34, '4580 S 2300 E', 'Holladay', 'UT', '84117', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 8 [4, '380 W 2880 S', 'Salt Lake City', 'UT', '84115', 'EOD', '4 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 9 [10, '600 E 900 South', 'Salt Lake City', 'UT', '84105', 'EOD', '1 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 10 [21, '3595 Main St', 'Salt Lake City', 'UT', '84115', 'EOD', '3 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 11 [24, '5025 State St', 'Murray', 'UT', '84107', 'EOD', '7 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 12 [27, '1060 Dalton Ave S', 'Salt Lake City', 'UT', '84104', 'EOD', '5 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 13 [35, '1060 Dalton Ave S', 'Salt Lake City', 'UT', '84104', 'EOD', '88 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 14 [18, '1488 4800 S', 'Salt Lake City', 'UT', '84123', 'EOD', '6 Kilos', "'Can only be on truck 2'", ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 15 [16, '4580 S 2300 E', 'Holladay', 'UT', '84117', '10:30 AM', '88 Kilos', "'Must be delivered with 13", ('Out for Delivery', datetime.time(8, 0)), None, 0]
+# 16 [32, '3365 S 900 W', 'Salt Lake City', 'UT', '84119', 'EOD', '1 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
+
+
 def deliver(truck, time):
     delivered = []
-    distances = []
-    while len(delivered) < 16:
+    packagequeue = []
+    # Mobilize all trucks in the fleet to begin delivering packages
+    for package in truck.cargo:
+        packageaddress = package[1]  # address of package
+        distance = calculatedistance(truck.address, packageaddress)  # distance from current address to package
+        packagequeue.append((package, distance))  # add package and distance to list
 
-        # Find the nearest neighbor
-        for packages in truck.cargo:
-            for package in packages:
-                # print("Truck address: ", truck.address)
-                # print("Package address: ", package.address)
-                distance = map.calculatedistance(truck.address, package.address)
-                distances.append((package, distance))
+    nearest = min(packagequeue, key=lambda x: x[1])  # find nearest distance in the packagequeue
+    nearestpackage = nearest[0]
+    nearestaddress = nearestpackage[1]
+    nearestdistance = nearest[1]
 
-        # Filter out the None values
-        # distances = list(filter(lambda x: x[1] is not None, distances))
-        distances = [d for d in distances if d[1] is not None]
-        if distances:
-            # Find the package with the smallest distance
-            nearest = min(distances, key=lambda x: x[1])
+    # Send truck to nearest address
+    truck.address = nearestaddress
 
-        # Assign the nearest package and distance to variables for better readability
-        nearestpackage = nearest[0]
-        nearestmileage = nearest[1]
+    # update truck mileage
+    truck.mileage += nearestdistance
 
-        # Calculate the time to deliver the package
-        duration = truck.calculateduration(nearestmileage)  # duration is in minutes
-        timedelta = datetime.timedelta(minutes=duration)  # timedelta is in minutes
-        deliverytime = time + timedelta  # delivery time
-        difference = deliverytime - time  # the difference between delivery time and global time
-        package.timedelivered = deliverytime  # set the package's delivery time to the delivery time
-        time += timedelta  # increment the global time by the timedelta
+    # update package status to delivered
+    for package in truck.cargo:
+        if package[1] == truck.address:
+            package[8] = ("Delivered", time)  # update package status to delivered
+            delivered.append(package)  # add package to delivered list
+            truck.cargo.remove(package)  # remove package from truck cargo
+            packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
+            print("Package " + str(package[0]) + " has been delivered.")
 
-        # Print statements for testing
-        print(f"Package {nearestpackage.id} will be delivered at {deliverytime.time()}")
-        print(f"{truck.name} traveled {nearestmileage} miles to deliver {nearestpackage}, in {difference} from {truck.address} to {nearestpackage.address}")
-
-        # Assign the nearest package's coordinates
-        nearestpackage.coordinates = map.findcoordinates(nearestpackage.address)
-
-        if truck.name == "Truck 1":
-            # Create path for GUI map image
-            generatepath(truck.coordinates, nearestpackage.coordinates, "red")
-        if truck.name == "Truck 2":
-            # Create path for GUI map image
-            generatepath(truck.coordinates, nearestpackage.coordinates, "blue")
-
-        # Update truck address to the nearest package's address
-        truck.address = nearestpackage.address
-
-        # Update the truck coordinates
-        truck.coordinates = map.findcoordinates(truck.address)
-
-        # Increment the truck's mileage by the distance to the nearest package
-        truck.mileage += float(nearestmileage)
-
-        # Add nearest to delivered
-        delivered.append(nearestpackage)
-        print(f"Package {nearestpackage.id} has been delivered to {nearestpackage.address} at {package.timedelivered.time()}.\n")
-
-        # Remove nearest from cargo
-        truck.removepackage(nearestpackage)
-
-        # Update package status to delivered
-        nearestpackage.status = nearestpackage.Status.DEL.value
-
-        # Remove nearest from distances
-        for entry in distances:
-            if nearestpackage in entry:
-                print(f"Package {nearestpackage.id} has been removed from the list of distances.")
-                distances.remove(entry)
-
-        # Remove the package from map
-        map.delete(nearestpackage.id)
-        print(f"Package {nearestpackage.id} has been removed from the map.\n")
-    print(f"{truck.name} has delivered all packages.\n")
+    # add delivered packages to map.delivered
+    for package in delivered:
+        map.delivered.append(package)
 
 
-# Deliver packages
-for truck in fleet:
-    deliver(truck, time)
+for truck in fleet.trucks:
+    if "Truck 1" in truck.name:
+        while len(truck.cargo) > 0:
+            deliver(truck, gtime)
+            if len(truck.cargo) == 0:
+                fleet.totalmileage += truck.mileage
+                print(truck.name + " has delivered all packages.")
+                print("Total mileage: " + str(fleet.totalmileage))
+                break
+    if "Truck 2" in truck.name:
+        while len(truck.cargo) > 0:
+            deliver(truck, gtime)
+            if len(truck.cargo) == 0:
+                fleet.totalmileage += truck.mileage
+                print(truck.name + " has delivered all packages.")
+                print("Total mileage: " + str(fleet.totalmileage))
+                break
+# Separate packages between map.sorted and map.delivered
+# Then deliver the rest of the packages
+for package in map.delivered:
+    map.sorted.remove(package)
+for truck in fleet.trucks:  # deliver the rest of the packages
+    if "Truck 1" in truck.name:
+        for package in map.sorted:
+            truck.cargo.append(package)  # add package to truck cargo
+        while len(truck.cargo) > 0:
+            deliver(truck, gtime)
+            if len(truck.cargo) == 0:
+                fleet.totalmileage += truck.mileage
+                print(truck.name + " has delivered all packages.")
+                print("Total mileage: " + str(fleet.totalmileage))
+                break
 
 
-# def deliverpackages(truck, load, time):
-#     while len(truck.cargo) > 0:
-#         # Create packages and distances lists
-#         list = []  # tuple: (package, distance)
-#
-#         # Find the distance between the truck and each package
-#         for load in truck.cargo:
-#             for package in load:
-#                 distance = Utils.findDistance(truck.address, package.address)
-#                 if distance is not None:
-#                     list.append((package, distance))
-#
-#         # Find the package with the smallest distance
-#         nearest = min(list, key=lambda x: x[1])
-#         # Change truck address to the nearest package's address
-#         truck.address = nearest[0].address
-#
-#         # Increment the truck's mileage by the distance to the nearest package
-#         truck.mileage += nearest[1]
-#
-#         # Update the trucks coordinates
-#         truck.coordinates = Utils.findCoordinates(truck.address)
-#
-#         # Update times
-#         # Calculate the duration of the trip, in hours
-#         duration = Utils.calculateduration(nearest[1])
-#         # Convert the duration to minutes
-#         inminutes = 60 * duration
-#         # Convert the minutes to a timedelta object
-#         duration = datetime.timedelta(minutes=inminutes)
-#         # Add the duration to the time
-#         time = time + duration
-#
-#         # Update the truck's time
-#         truck.time += duration
-#
-#         # Deliver the package NEEDS WORK HERE !!!!!!!!!!!!!!!!!
-#         for load in truck.cargo:
-#             for package in load:
-#                 if package == nearest[0]:
-#                     package.timedelivered = time
-#                     package.status = "Delivered"
-#                     load.remove(package)
-#
-#         # Remove from map
-#         map.delete(nearest[0].id)
-#
-#         for load in truck.cargo:
-#             for package in load:
-#                 path = (truck.address, truck.time, truck.coordinates)
-#                 package.footprint.append(path)
-
-
-# Worst Case: O(n^2)
-# deliverPackages function incorporates a variant of the Greedy Algorithm
-# def deliverPackages(truck, color):
-#     delivered = []
-#     # Continues as long as there are packages left to deliver
-#     while truck.packages:
-#         cords = []
-#         packages = []  # Stores the packages that are to be delivered
-#         distances = []  # Stores the distances from the truck to the packages
-#         delivered = []  # Stores the packages that have been delivered
-#         path = []  # Stores the path that the truck will take
-#         # Append coordinates to cords array
-#         for xy in coordinates:
-#             cords.append(xy)
-#         # Add distances and packages to the distances and packages lists
-#         for index, packageID in enumerate(truck.packages):
-#             package = workload.search(packageID)  # Retrieves the package details
-#             package.coordinates = cords[index]  # Sets the package's address coordinates
-#             distance = Utils.findDistance(truck.address, package.address)  # Calculates the distance from the truck to the package
-#             if distance is None:
-#                 distance = 0.0
-#             # Adds the distance and package to the distances list
-#             distances.append((distance, package))
-#             # Add the package to the packages list
-#             packages.append(package)
-#         # Finds the package with the smallest distance to the truck
-#         nearestneighbor = min(distances, key=lambda x: x[0])
-#         # Increment the time by the time it takes to deliver the nearest package
-#         # truck.time = Utils.calculateTimeDT(time, nearestneighbor[0])
-#         truck.time = passTime(nearestneighbor[0])
-#         # Update package time to truck time
-#         nearestneighbor[1].time = truck.time
-#         # Save current truck coordinates
-#         currentcoordinates = truck.coordinates
-#         # Update truck coordinates to nearest package coordinates
-#         if truck.address == "4001 South 700 East":  # Hub address
-#             truck.updateLocation(nearestneighbor[1].address)
-#             truck.updateCoordinates(nearestneighbor[1].coordinates)
-#         # Add the coordinates of the nearest package to the path with respect to the indexing scheme of the addressfile
-#         path.append(nearestneighbor[1].coordinates)
-#         # Finds the coordinates of the nearest package
-#         nearestcoordinates = Utils.findCoordinates(nearestneighbor[1].address)
-#         # Draws the path from the truck to the nearest package
-#         generatePath(currentcoordinates, nearestcoordinates, color)
-#         # Increases the mileage of the truck by the distance to the nearest package
-#         truck.mileage += nearestneighbor[0]
-#         # Updates the location of the truck to the location of the package that was just delivered
-#         truck.updateLocation(nearestneighbor[1].address)
-#         # Updates the coordinates of the truck to the coordinates of the package that was just delivered
-#         truck.updateCoordinates(nearestcoordinates)
-#         # Updates the status of the package to "Delivered"
-#         nearestneighbor[1].status = Package.Status.DEL.value
-#         # Adds the package to the list of delivered packages
-#         delivered.append((nearestneighbor[1], nearestneighbor[1].status))
-#         # Removes the delivered package from the truck's packages
-#         truck.packages.remove(nearestneighbor[1].id)
-#     # Returns the total mileage of the truck after all packages have been delivered
-#     updateTree(tree)
-#     return truck.mileage, delivered, time
+for truck in fleet.trucks:
+    print(len(truck.cargo))
 
 
 # Creates a tree view of the packages
@@ -423,7 +381,7 @@ def returnTripReport():
 
 # searchLoad() searches for a package by ID and focuses on it in the tree view
 def searchLoad(packageID, tree):
-    package = workload.search(packageID)
+    package = map.search(packageID)
     for child in tree.get_children():
         if tree.item(child)["values"][0] == package.id:
             tree.selection_set(child)
@@ -436,6 +394,7 @@ def searchLoad(packageID, tree):
 
 # tree = buildTree()
 
+
 searchentry = tk.Entry(root)
 searchentry.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 150)
 
@@ -444,14 +403,14 @@ searchbutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 180)
 searchbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 searchentry.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
-truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
-truck1button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
-
-truck2button = tk.Button(root, text="Truck 2", command=lambda: deliverPackages(truck2, "blue"))
-truck2button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
-
-truck3button = tk.Button(root, text="Truck 3", command=lambda: deliverPackages(truck3, "green"))
-truck3button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
+# truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
+# truck1button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
+#
+# truck2button = tk.Button(root, text="Truck 2", command=lambda: deliverPackages(truck2, "blue"))
+# truck2button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
+#
+# truck3button = tk.Button(root, text="Truck 3", command=lambda: deliverPackages(truck3, "green"))
+# truck3button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 calculationsbutton = tk.Button(root, text="Calculate", command=returnTripReport)
 calculationsbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
