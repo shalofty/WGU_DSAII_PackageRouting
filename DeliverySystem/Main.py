@@ -225,10 +225,16 @@ def deliver(truck, time):
     nearest = min(packagequeue, key=lambda x: x[1])  # find nearest distance in the packagequeue
     nearestpackage = nearest[0]
     nearestaddress = nearestpackage[1]
+    nearestcoordinates = nearestpackage[9]
     nearestdistance = nearest[1]
 
-    # Send truck to nearest address
+    generatepath(truck.coordinates, nearestcoordinates, truck.color)  # generate path from current address to nearest package
+
+    # updates truck address to the nearest package address
     truck.address = nearestaddress
+
+    # update truck coordinates to nearest package coordinates
+    truck.coordinates = nearestcoordinates
 
     # update truck mileage
     truck.mileage += nearestdistance

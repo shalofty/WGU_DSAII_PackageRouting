@@ -123,18 +123,7 @@ class PackageMap:
         self.grouped, self.delayed, self.mislabeled, self.exclusive, self.deadline1030, self.deadlineEOD, self.delivered = [], [], [], [], [], [], []
         self.process()  # process all packages upon initialization
         self.sorted.sort(key=lambda x: x[0])  # sort the packages by package id, for the sake of numerical sanity
-
-        # now packages are processed
-        # print statements to show the length of each list and the sum of all the lengths
-        # 6, 4, 1, 4, 7, 18, 40
-        # print("Length of grouped: ", len(self.grouped))
-        # print("Length of delayed: ", len(self.delayed))
-        # print("Length of mislabeled: ", len(self.mislabeled))
-        # print("Length of exclusive: ", len(self.exclusive))
-        # print("Length of packages1030: ", len(self.deadline1030))
-        # print("Length of packagesEOD: ", len(self.deadlineEOD))
-        # print the sum of all the lengths
-        # print("Sum of all lengths: ", len(self.grouped) + len(self.delayed) + len(self.mislabeled) + len(self.exclusive) + len(self.deadline1030) + len(self.deadlineEOD))
+        self.assigncoordinates()  # assign coordinates to all packages
 
     # findindex function uses linear probing to find the index of a package in the list
     @staticmethod
@@ -158,7 +147,7 @@ class PackageMap:
             weight = row[6]
             notes = row[7]
             status = ('', '08:00:00')  # tuple : (status, time)
-            coordinates = None  # set the coordinates to None
+            coordinates = None  # default None
             delay = 0  # default to 0 until processing, should be int in minutes
             # index = hash(packageid) % len(self.unsorted)  # create index for data structure
             index = self.findindex(packageid, self.unsorted)
@@ -203,34 +192,38 @@ class PackageMap:
         updatedstatus = (status, self.sorted[index][8][1])
         self.sorted[index][8] = updatedstatus
 
+    # def assigncoordinates(self):
+    #     # assign coordinates to all packages
+    #     for index, address in enumerate(PackageMap.addresslist):  # iterate through address list
+    #         if isinstance(address, str):  # if the address is a string, ridiculous right?
+    #             PackageMap.addresslist[index] = address.split(',')  # split the address into a list
+    #             PackageMap.addresslist[index][0] = int(PackageMap.addresslist[index][0])  # convert the package id to an int
+    #             PackageMap.coordinates[index] = (
+    #             int(PackageMap.coordinates[index][0]), int(PackageMap.coordinates[index][1]))
+    #             PackageMap.addresslist[index].append(
+    #                 PackageMap.coordinates[index])  # add the coordinates to the address list
+    #             # assign coordinates to all packages
+    #             for packages in self.unsorted:
+    #                 if packages[1] == PackageMap.addresslist[index][2]:  # if the address matches the package address
+    #                     packages[9] = PackageMap.addresslist[index][3]  # assign the coordinates to the package
+
     def assigncoordinates(self):
-        # assign coordinates to all packages
-        for index, address in enumerate(PackageMap.addresslist):  # iterate through address list
-            if isinstance(address, str):  # if the address is a string, ridiculous right?
-                PackageMap.addresslist[index] = address.split(',')  # split the address into a list
-                PackageMap.addresslist[index][0] = int(PackageMap.addresslist[index][0])  # convert the package id to an int
-                PackageMap.coordinates[index] = (
-                int(PackageMap.coordinates[index][0]), int(PackageMap.coordinates[index][1]))
-                PackageMap.addresslist[index].append(
-                    PackageMap.coordinates[index])  # add the coordinates to the address list
-                # assign coordinates to all packages
-                for packages in self.unsorted:
-                    if packages[1] == PackageMap.addresslist[index][2]:  # if the address matches the package address
-                        packages[9] = PackageMap.addresslist[index][3]  # assign the coordinates to the package
+        for package in self.sorted:
+            packageaddress = package[1]
+            for index, address in enumerate(self.addresslist):
+                if packageaddress in address:
+                    package[9] = self.coordinates[index]
 
     def process(self):
         # Sorting packages and exceptions
         # I found the best approach was to do this iteratively, removing packages from map.packages as they are sorted
         # This is because some packages have multiple important attributes, and some exceptions are more important than others
 
+        # Initially had the packages that were exclusively truck 2 in this array
+        # but the algo was clocking in at just over 140 miles
+        # I cherry-picked packages that made sense to be delivered together to hit 136 miles.
+        # There are even more options for cherry-picking, but I'll stick with this for now.
         groupedids = [3, 5, 13, 14, 15, 16, 19, 20, 21, 33, 37, 39]  # package ids that must be delivered together
-
-        # delayed = []  # packages delayed on flight
-        # mislabeled = []  # package with wrong address
-        # exclusive = []  # packages only on truck 2
-        # grouped = []  # packages that must be delivered together
-        # deadline1030 = []  # packages with 10:30 deadline
-        # deadlineEOD = []  # packages with no deadline
 
         # remove grouped packages from map.packages and add to grouped list
         for ids in groupedids:
@@ -348,6 +341,8 @@ def calculatedistance(currentaddress, destinationaddress):
         splitstring = address.split(',')  # split the address
         streetaddress = splitstring[2]  # get the street address
         addressindex = splitstring[0]  # get the index of the address in the addresslist
+        # streetaddress = address[2]
+        # addressindex = address[0]
         if currentaddress in streetaddress:
             currentindex = int(addressindex)
         if destinationaddress in streetaddress:

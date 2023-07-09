@@ -15,6 +15,11 @@ class Truck:
         self.address = "4001 South 700 East"  # starting location is Hub address
         self.coordinates = [397, 456]  # WGU coordinates
         self.time = datetime.datetime(2020, 1, 1, 8, 0, 0)  # starting time is 8:00 AM
+        self.color = None
+        if self.name == "Truck 1":
+            self.color = "red"
+        if self.name == "Truck 2":
+            self.color = "blue"
 
     # updateLocation method which changes the Truck address to currentlocation
     def updateLocation(self, currentlocation):
