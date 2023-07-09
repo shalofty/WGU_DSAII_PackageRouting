@@ -228,7 +228,11 @@ def deliver(truck, time):
     nearestcoordinates = nearestpackage[9]
     nearestdistance = nearest[1]
 
-    generatepath(truck.coordinates, nearestcoordinates, truck.color)  # generate path from current address to nearest package
+    if "Truck 1" in truck.name:
+        generatepath(truck.coordinates, nearestcoordinates, "red")  # generate path from current address to nearest package
+
+    elif "Truck 2" in truck.name:
+        generatepath(truck.coordinates, nearestcoordinates, "blue")
 
     # updates truck address to the nearest package address
     truck.address = nearestaddress
