@@ -232,7 +232,7 @@ def deliver(truck, time):
         generatepath(truck.coordinates, nearestcoordinates, "red")  # generate path from current address to nearest package
 
     elif "Truck 2" in truck.name:
-        generatepath(truck.coordinates, nearestcoordinates, "blue")
+        generatepath(truck.coordinates, nearestcoordinates, "blue")  # generate path from current address to nearest package
 
     # updates truck address to the nearest package address
     truck.address = nearestaddress
