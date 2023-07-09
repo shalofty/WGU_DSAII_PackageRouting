@@ -8,7 +8,7 @@ import datetime
 import tkinter as tk
 from tkinter import ttk
 
-# Creating a PackageMap object
+# Creating a PackageMap object named map
 map = PackageMap()
 
 # Setting global time to 8:00 AM, time won't increment until packages start being delivered
@@ -169,48 +169,6 @@ def trucks():
 
 # Load trucks in fleet
 fleet = trucks()
-
-# Checking loads of each truck in the fleet
-# for truck in fleet.trucks:
-#     print(truck.name + " cargo:")
-#     for index, package in enumerate(truck.cargo):
-#         print((index + 1), package)
-
-# Current output:
-# Truck 1 cargo:
-# 1 [13, '2010 W 500 S', 'Salt Lake City', 'UT', '84104', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 2 [15, '4580 S 2300 E', 'Holladay', 'UT', '84117', '9:00 AM', '4 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 3 [19, '177 W Price Ave', 'Salt Lake City', 'UT', '84115', 'EOD', '37 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 4 [9, '300 State St', 'Salt Lake City', 'UT', '84103', 'EOD', '2 Kilos', "'Wrong address listed'", ('Out for Delivery', datetime.time(8, 0)), None, 140]
-# 5 [6, '3060 Lester St', 'West Valley City', 'UT', '84119', '10:30 AM', '88 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
-# 6 [28, '2835 Main St', 'Salt Lake City', 'UT', '84115', 'EOD', '7 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
-# 7 [40, '380 W 2880 S', 'Salt Lake City', 'UT', '84115', '10:30 AM', '45 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 8 [29, '1330 2100 S', 'Salt Lake City', 'UT', '84106', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 9 [31, '3365 S 900 W', 'Salt Lake City', 'UT', '84119', '10:30 AM', '1 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 10 [37, '410 S State St', 'Salt Lake City', 'UT', '84111', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 11 [2, '2530 S 500 E', 'Salt Lake City', 'UT', '84106', 'EOD', '44 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 12 [5, '410 S State St', 'Salt Lake City', 'UT', '84111', 'EOD', '5 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 13 [8, '300 State St', 'Salt Lake City', 'UT', '84103', 'EOD', '9 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 14 [11, '2600 Taylorsville Blvd', 'Salt Lake City', 'UT', '84118', 'EOD', '1 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 15 [17, '3148 S 1100 W', 'Salt Lake City', 'UT', '84119', 'EOD', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 16 [22, '6351 South 900 East', 'Murray', 'UT', '84121', 'EOD', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# Truck 2 cargo:
-# 1 [3, '233 Canyon Rd', 'Salt Lake City', 'UT', '84103', 'EOD', '2 Kilos', "'Can only be on truck 2'", ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 2 [36, '2300 Parkway Blvd', 'West Valley City', 'UT', '84119', 'EOD', '88 Kilos', "'Can only be on truck 2'", ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 3 [14, '4300 S 1300 E', 'Millcreek', 'UT', '84117', '10:30 AM', '88 Kilos', "'Must be delivered with 15", ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 4 [20, '3595 Main St', 'Salt Lake City', 'UT', '84115', '10:30 AM', '37 Kilos', "'Must be delivered with 13", ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 5 [25, '5383 South 900 East #104', 'Salt Lake City', 'UT', '84117', '10:30 AM', '7 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
-# 6 [1, '195 W Oakland Ave', 'Salt Lake City', 'UT', '84115', '10:30 AM', '21 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 7 [34, '4580 S 2300 E', 'Holladay', 'UT', '84117', '10:30 AM', '2 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 8 [4, '380 W 2880 S', 'Salt Lake City', 'UT', '84115', 'EOD', '4 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 9 [10, '600 E 900 South', 'Salt Lake City', 'UT', '84105', 'EOD', '1 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 10 [21, '3595 Main St', 'Salt Lake City', 'UT', '84115', 'EOD', '3 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 11 [24, '5025 State St', 'Murray', 'UT', '84107', 'EOD', '7 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 12 [27, '1060 Dalton Ave S', 'Salt Lake City', 'UT', '84104', 'EOD', '5 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 13 [35, '1060 Dalton Ave S', 'Salt Lake City', 'UT', '84104', 'EOD', '88 Kilos', '', ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 14 [18, '1488 4800 S', 'Salt Lake City', 'UT', '84123', 'EOD', '6 Kilos', "'Can only be on truck 2'", ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 15 [16, '4580 S 2300 E', 'Holladay', 'UT', '84117', '10:30 AM', '88 Kilos', "'Must be delivered with 13", ('Out for Delivery', datetime.time(8, 0)), None, 0]
-# 16 [32, '3365 S 900 W', 'Salt Lake City', 'UT', '84119', 'EOD', '1 Kilos', "'Delayed on flight---will not arrive to depot until 9:05 am'", ('Out for Delivery', datetime.time(8, 0)), None, 65]
 
 
 def deliver(truck, time):

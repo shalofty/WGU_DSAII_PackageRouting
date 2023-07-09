@@ -192,21 +192,7 @@ class PackageMap:
         updatedstatus = (status, self.sorted[index][8][1])
         self.sorted[index][8] = updatedstatus
 
-    # def assigncoordinates(self):
-    #     # assign coordinates to all packages
-    #     for index, address in enumerate(PackageMap.addresslist):  # iterate through address list
-    #         if isinstance(address, str):  # if the address is a string, ridiculous right?
-    #             PackageMap.addresslist[index] = address.split(',')  # split the address into a list
-    #             PackageMap.addresslist[index][0] = int(PackageMap.addresslist[index][0])  # convert the package id to an int
-    #             PackageMap.coordinates[index] = (
-    #             int(PackageMap.coordinates[index][0]), int(PackageMap.coordinates[index][1]))
-    #             PackageMap.addresslist[index].append(
-    #                 PackageMap.coordinates[index])  # add the coordinates to the address list
-    #             # assign coordinates to all packages
-    #             for packages in self.unsorted:
-    #                 if packages[1] == PackageMap.addresslist[index][2]:  # if the address matches the package address
-    #                     packages[9] = PackageMap.addresslist[index][3]  # assign the coordinates to the package
-
+    # Assign coordinates function assigns coordinates to all packages
     def assigncoordinates(self):
         for package in self.sorted:
             packageaddress = package[1]
