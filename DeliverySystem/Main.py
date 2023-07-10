@@ -5,41 +5,27 @@ from PackageMap import *
 from Fleet import *
 
 import datetime
+import threading
+import queue
 import tkinter as tk
 from tkinter import ttk
 
 # Creating a PackageMap object named map
 map = PackageMap()
 
+# Create a threading lock
+lock = threading.Lock()
+updateq = queue.Queue()  # queue for updating the GUI
+
 # Setting global time to 8:00 AM, time won't increment until packages start being delivered
 # Also updated the times to datetime types to enable incrementing, because the task guidelines
 # explicitly state not to use any additional libraries in the PackageMap class. Why?
 # So they can see how creative we can be, right? Right..
-gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
+gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM  # global time
 testtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM
 for package in map.sorted:
     id = package[0]
     map.updatetime(id, gtime.time())
-
-# GUI Settings
-WINDOW_TITLE = "Package Delivery System"
-MAP_IMAGE_PATH = "map.png"
-MENU_ORIGIN = [672, 756]
-
-root = tk.Tk()
-root.title(WINDOW_TITLE)
-root.resizable(False, False)
-root.configure(background="white")
-
-# Load the map image for the GUI
-pmap = tk.PhotoImage(file=MAP_IMAGE_PATH)
-w = pmap.width()
-h = pmap.height()
-
-# Create a canvas that can fit the map image
-canvas = tk.Canvas(root, width=w, height=h, bg="grey")
-canvas.pack(expand=tk.YES, fill=tk.BOTH)
-canvas.create_image(0, 0, image=pmap, anchor=tk.NW)
 
 
 # generatePath function which takes currentcoordinates, nearestcoordinates, and color as parameters
@@ -48,7 +34,7 @@ def generatepath(currentcoordinates, nearestcoordinates, color):
     canvas.create_line(currentcoordinates[0], currentcoordinates[1], nearestcoordinates[0], nearestcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST)
 
 
-def sortload(truck, time):
+def sortload(truck):
     OFD = "Out for Delivery"
     lastload = False
     while len(truck.cargo) < truck.capacity or lastload:
@@ -97,7 +83,7 @@ def sortload(truck, time):
             delay = package[10]
             timedelta = datetime.timedelta(minutes=delay)
             delaytime = gtime + timedelta
-            if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+            if gtime >= delaytime:
                 # Update the label if it's past 10:20 AM
                 updatedaddress = "410 S State St"
                 updatedcity = "Salt Lake City"
@@ -122,7 +108,7 @@ def sortload(truck, time):
             delay = package[10]
             timedelta = datetime.timedelta(minutes=delay)
             delaytime = gtime + timedelta
-            if gtime >= delaytime:  # THIS NEEDS TO BE CHANGED BEFORE SUBMISSION
+            if gtime >= delaytime:
                 # add delayed packages to truck
                 truck.addpackage(package)
                 # update package status to "Out for Delivery"
@@ -163,7 +149,7 @@ def sortload(truck, time):
 
 def trucks():
     for truck in fleet.trucks:
-        sortload(truck, gtime)
+        sortload(truck)
     return fleet
 
 
@@ -173,97 +159,172 @@ fleet = trucks()
 
 def deliver(truck, time):
     delivered = []
+    urgentqueue = []
     packagequeue = []
-    # Mobilize all trucks in the fleet to begin delivering packages
+
     for package in truck.cargo:
-        packageaddress = package[1]  # address of package
-        distance = calculatedistance(truck.address, packageaddress)  # distance from current address to package
-        packagequeue.append((package, distance))  # add package and distance to list
+        deadline = package[5]  # deadline of package
+        if deadline == "9:00 AM" or deadline == "10:30 AM":
+            urgentqueue.append(package)
 
-    nearest = min(packagequeue, key=lambda x: x[1])  # find nearest distance in the packagequeue
-    nearestpackage = nearest[0]
-    nearestaddress = nearestpackage[1]
-    nearestcoordinates = nearestpackage[9]
-    nearestdistance = nearest[1]
+    if len(urgentqueue) > 0:
+        # Mobilize all trucks in the fleet to begin delivering packages
+        for package in urgentqueue:
+            packageaddress = package[1]  # address of package
+            distance = calculatedistance(truck.address, packageaddress)  # distance from current address to package
+            packagequeue.append((package, distance))  # add package and distance to list
 
-    if "Truck 1" in truck.name:
-        generatepath(truck.coordinates, nearestcoordinates, "red")  # generate path from current address to nearest package
+        nearest = min(packagequeue, key=lambda x: x[1])  # find nearest distance in the packagequeue
+        nearestpackage = nearest[0]  # nearest package
+        nearestaddress = nearestpackage[1]  # nearest package address
+        nearestcoordinates = nearestpackage[9]  # nearest package coordinates
+        nearestdistance = nearest[1]  # nearest distance
 
-    elif "Truck 2" in truck.name:
-        generatepath(truck.coordinates, nearestcoordinates, "blue")  # generate path from current address to nearest package
+        # updateq for the GUI
+        updateq.put(("line", (truck.coordinates, nearestcoordinates, truck.name)))
 
-    # updates truck address to the nearest package address
-    truck.address = nearestaddress
+        # updates truck address to the nearest package address
+        truck.address = nearestaddress
 
-    # update truck coordinates to nearest package coordinates
-    truck.coordinates = nearestcoordinates
+        # update truck coordinates to nearest package coordinates
+        truck.coordinates = nearestcoordinates
 
-    # update truck mileage
-    truck.mileage += nearestdistance
+        # update truck mileage
+        truck.mileage += nearestdistance
 
-    # update time
-    duration = truck.calculateduration(nearestdistance)
-    timedelta = datetime.timedelta(minutes=duration)
-    time += timedelta
+        # update time
+        duration = truck.calculateduration(nearestdistance)
+        timedelta = datetime.timedelta(minutes=duration)
+        time += timedelta
+        truck.time = time
 
-    # update package status to delivered
-    for package in truck.cargo:
-        if package[1] == truck.address:
-            package[8] = ("Delivered", time)  # update package status to delivered
-            delivered.append(package)  # add package to delivered list
-            truck.cargo.remove(package)  # remove package from truck cargo
-            packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
-            print("Package " + str(package[0]) + " has been delivered at " + str(time))
+        # update package status to delivered
+        for package in urgentqueue:
+            if package[1] == truck.address:
+                package[8] = ("Delivered", time)  # update package status to delivered
+                delivered.append(package)  # add package to delivered list
+                truck.cargo.remove(package)  # remove package from truck cargo
+                packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
+                print("Package " + str(package[0]) + " has been delivered at " + str(time.time()))
+                print("The deadline was " + str(package[5]))
 
+    if len(urgentqueue) == 0:
+        # Mobilize all trucks in the fleet to begin delivering packages
+        for package in truck.cargo:
+            packageaddress = package[1]  # address of package
+            distance = calculatedistance(truck.address, packageaddress)  # distance from current address to package
+            packagequeue.append((package, distance))  # add package and distance to list
+
+        nearest = min(packagequeue, key=lambda x: x[1])  # find nearest distance in the packagequeue
+        nearestpackage = nearest[0]  # nearest package
+        nearestaddress = nearestpackage[1]  # nearest package address
+        nearestcoordinates = nearestpackage[9]  # nearest package coordinates
+        nearestdistance = nearest[1]  # nearest distance
+
+        # updateq for the GUI
+        updateq.put(("line", (truck.coordinates, nearestcoordinates, truck.name)))
+
+        # updates truck address to the nearest package address
+        truck.address = nearestaddress
+
+        # update truck coordinates to nearest package coordinates
+        truck.coordinates = nearestcoordinates
+
+        # update truck mileage
+        truck.mileage += nearestdistance
+
+        # update time
+        duration = truck.calculateduration(nearestdistance)
+        timedelta = datetime.timedelta(minutes=duration)
+        time += timedelta
+        truck.time = time
+
+        # update package status to delivered
+        for package in truck.cargo:
+            if package[1] == truck.address:
+                package[8] = ("Delivered", time)  # update package status to delivered
+                delivered.append(package)  # add package to delivered list
+                truck.cargo.remove(package)  # remove package from truck cargo
+                packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
+                print("Package " + str(package[0]) + " has been delivered at " + str(time.time()))
+                print("The deadline was " + str(package[5]))
+
+    # End of delivery
     # add delivered packages to map.delivered
     for package in delivered:
         map.delivered.append(package)
-
     # when truck is empty, return to hub
     if len(truck.cargo) == 0:
         # update truck address to hub
         truck.address = "4001 South 700 East"
         # update truck coordinates to hub coordinates
         truck.coordinates = [397, 456]
+        # update truck trip
+        truck.trip += 1
+    return time
 
 
-for truck in fleet.trucks:
-    if "Truck 1" in truck.name:
-        while len(truck.cargo) > 0:
-            deliver(truck, gtime)
+def deliveryroutine(truck, gtime, fleet):
+    while len(truck.cargo) > 0:
+        with lock:
+            gtime = deliver(truck, gtime)
             if len(truck.cargo) == 0:
                 fleet.totalmileage += truck.mileage
                 print(truck.name + " has delivered all packages.")
                 print("Total mileage: " + str(fleet.totalmileage))
-                break
-    if "Truck 2" in truck.name:
-        while len(truck.cargo) > 0:
-            deliver(truck, gtime)
-            if len(truck.cargo) == 0:
-                fleet.totalmileage += truck.mileage
-                print(truck.name + " has delivered all packages.")
-                print("Total mileage: " + str(fleet.totalmileage))
-                break
-# Separate packages between map.sorted and map.delivered
-# Then deliver the rest of the packages
-for package in map.delivered:
-    map.sorted.remove(package)
-for truck in fleet.trucks:  # deliver the rest of the packages
-    if "Truck 1" in truck.name:
-        for package in map.sorted:
-            truck.cargo.append(package)  # add package to truck cargo
-        while len(truck.cargo) > 0:
-            deliver(truck, gtime)
-            if len(truck.cargo) == 0:
-                fleet.totalmileage += truck.mileage
-                print(truck.name + " has delivered all packages.")
-                print("Total mileage: " + str(fleet.totalmileage))
-                break
+    return gtime
 
 
-for truck in fleet.trucks:
-    print(len(truck.cargo))
+def deliverremaining(gtime):
+    for package in map.delivered:
+        map.sorted.remove(package)
+    for truck in fleet.trucks:  # deliver the rest of the packages
+        if "Truck 1" in truck.name:
+            gtime = truck.time  # set time to truck 1's latest time
+            for package in map.sorted:
+                truck.cargo.append(package)
+            while len(truck.cargo) > 0:
+                gtime = deliver(truck, gtime)
+                if len(truck.cargo) == 0:
+                    fleet.totalmileage += truck.mileage
+                    print(truck.name + " has delivered all packages.")
+                    print("Total mileage: " + str(fleet.totalmileage))
+                    break
+    return gtime
 
+
+# checkq checks the updateq for new updates to the canvas
+def checkq():
+    while not updateq.empty():
+        command, args = updateq.get()
+        if command == "line":
+            truckcoordinates, nearestcoordinates, truckname = args
+            if "Truck 1" in truckname:
+                color = "red"
+            elif "Truck 2" in truckname:
+                color = "blue"
+            canvas.create_line(*truckcoordinates, *nearestcoordinates, fill=color, width=3, smooth=True, arrow=tk.LAST)
+    root.after(100, checkq)
+
+
+# In order to tackle the global time problem I decided to incorporate threading
+# Truck 1 and Truck 2 run on separate threads
+# Time is passed between threads, but because of how we view time in this situation it's permissible to use
+# Since we're looking at the time a package was delivered
+threads = []  # list of threads
+for truck in fleet.trucks:  # create a thread for each truck
+    thread = threading.Thread(target=deliveryroutine, args=(truck, gtime, fleet))
+    threads.append(thread)
+
+for thread in threads:
+    thread.start()
+
+for thread in threads:
+    thread.join()
+
+# deliver remaining packages if not all delivered
+if map.delivered != 40:
+    gtime = deliverremaining(gtime)
 
 # Creates a tree view of the packages
 def buildTree():
@@ -379,7 +440,30 @@ def searchLoad(packageID, tree):
             break
     return package
 
-# GUI
+
+# # GUI Settings
+WINDOW_TITLE = "Package Delivery System"
+MAP_IMAGE_PATH = "map.png"
+MENU_ORIGIN = [672, 756]
+
+# Create root window
+root = tk.Tk()
+root.title(WINDOW_TITLE)
+root.resizable(False, False)
+root.configure(background="white")
+
+# Load the map image for the GUI
+pmap = tk.PhotoImage(file=MAP_IMAGE_PATH)
+w = pmap.width()
+h = pmap.height()
+
+# Create a canvas that can fit the map image
+canvas = tk.Canvas(root, width=w, height=h, bg="grey")
+canvas.pack(expand=tk.YES, fill=tk.BOTH)
+canvas.create_image(0, 0, image=pmap, anchor=tk.NW)
+
+# Start qchecker
+root.after(100, checkq)
 
 # tree = buildTree()
 
@@ -391,15 +475,6 @@ searchbutton = tk.Button(root, text="Search", command=lambda: searchLoad(int(sea
 searchbutton.place(x=MENU_ORIGIN[0] + 10, y=MENU_ORIGIN[1] - 180)
 searchbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 searchentry.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
-
-# truck1button = tk.Button(root, text="Truck 1", command=lambda: deliverPackages(truck1, "red"))
-# truck1button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
-#
-# truck2button = tk.Button(root, text="Truck 2", command=lambda: deliverPackages(truck2, "blue"))
-# truck2button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
-#
-# truck3button = tk.Button(root, text="Truck 3", command=lambda: deliverPackages(truck3, "green"))
-# truck3button.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)
 
 calculationsbutton = tk.Button(root, text="Calculate", command=returnTripReport)
 calculationsbutton.pack(side="bottom", fill="x", expand=True, padx=5, pady=5)

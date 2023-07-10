@@ -209,7 +209,7 @@ class PackageMap:
         # but the algo was clocking in at just over 140 miles
         # I cherry-picked packages that made sense to be delivered together to hit 136 miles.
         # There are even more options for cherry-picking, but I'll stick with this for now.
-        groupedids = [3, 5, 13, 14, 15, 16, 19, 20, 21, 33, 37, 39]  # package ids that must be delivered together
+        groupedids = [3, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 33, 36, 37, 38, 39]  # package ids that must be delivered together
 
         # remove grouped packages from map.packages and add to grouped list
         for ids in groupedids:
