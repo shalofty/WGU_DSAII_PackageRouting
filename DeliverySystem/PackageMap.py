@@ -26,7 +26,7 @@ import csv  # not used in PackageMap, but for distance calculations below the cl
 class PackageMap:
     # Below are lists of the data from the task files
     # Considering it's explicitly stated not to use other libraries or classes, I'm not sure how else to do this
-    # I hand-picked the coordinates for each address using Microsoft Paint so that I could have a pretty GUI
+    # I hand-picked the coordinates for each address using Microsoft Paint so that I could have a cool GUI
     packagelist = [
         "1,195 W Oakland Ave,Salt Lake City,UT,84115,10:30 AM,21 Kilos,,,,,,",
         "2,2530 S 500 E,Salt Lake City,UT,84106,EOD,44 Kilos,,,,,,",
