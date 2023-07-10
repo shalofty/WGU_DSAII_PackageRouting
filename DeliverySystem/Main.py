@@ -181,7 +181,7 @@ def deliver(truck, time):
         nearestdistance = nearest[1]  # nearest distance
 
         # updateq for the GUI
-        updateq.put(("line", (truck.coordinates, nearestcoordinates, truck.name)))
+        updateq.put(("line", (truck.coordinates, nearestcoordinates, truck.name, truck.trip)))
 
         # updates truck address to the nearest package address
         truck.address = nearestaddress
@@ -222,7 +222,7 @@ def deliver(truck, time):
         nearestdistance = nearest[1]  # nearest distance
 
         # updateq for the GUI
-        updateq.put(("line", (truck.coordinates, nearestcoordinates, truck.name)))
+        updateq.put(("line", (truck.coordinates, nearestcoordinates, truck.name, truck.trip)))
 
         # updates truck address to the nearest package address
         truck.address = nearestaddress
@@ -298,11 +298,13 @@ def checkq():
     while not updateq.empty():
         command, args = updateq.get()
         if command == "line":
-            truckcoordinates, nearestcoordinates, truckname = args
+            truckcoordinates, nearestcoordinates, truckname, trucktrip = args
             if "Truck 1" in truckname:
                 color = "red"
             elif "Truck 2" in truckname:
                 color = "blue"
+            if "Truck 1" in truckname and trucktrip > 0:
+                color = "yellow"
             canvas.create_line(*truckcoordinates, *nearestcoordinates, fill=color, width=3, smooth=True, arrow=tk.LAST)
     root.after(100, checkq)
 
