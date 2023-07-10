@@ -117,13 +117,10 @@ class PackageMap:
                    (421, 677)]
 
     def __init__(self):
-        self.unsorted = [[] for i in range(40)]  # list of all unsorted packages
-        self.sorted = []  # list of all packages sorted by truck
+        self.packages = [[] for i in range(40)]  # list of all unsorted packages, for processing
         self.load(PackageMap.packagelist)  # add all packages to the map upon initialization
-        self.grouped, self.delayed, self.mislabeled, self.exclusive, self.deadline1030, self.deadlineEOD, self.delivered = [], [], [], [], [], [], []
-        self.process()  # process all packages upon initialization
-        self.sorted.sort(key=lambda x: x[0])  # sort the packages by package id, for the sake of numerical sanity
-        self.assigncoordinates()  # assign coordinates to all packages
+        self.delivered = []  # list of all delivered packages
+        self.packages.sort(key=lambda x: x[0])  # sort the packages by package id, for the sake of numerical sanity
 
     # findindex function uses linear probing to find the index of a package in the list
     @staticmethod
@@ -147,11 +144,26 @@ class PackageMap:
             weight = row[6]
             notes = row[7]
             status = ('', '08:00:00')  # tuple : (status, time)
-            coordinates = None  # default None
-            delay = 0  # default to 0 until processing, should be int in minutes
-            # index = hash(packageid) % len(self.unsorted)  # create index for data structure
-            index = self.findindex(packageid, self.unsorted)
-            self.unsorted[index] = ([packageid, address, city, state, zipcode, deadline, weight, notes, status, coordinates, delay])
+            # find the coordinates of the package
+            for j, listaddress in enumerate(self.addresslist):
+                if address in listaddress:
+                    coordinates = self.coordinates[j]
+            # set the delay time for the package
+            if "Delayed on flight" in notes:
+                delay = 65
+            elif "Wrong address listed" in notes:
+                delay = 140
+            else:
+                delay = 0
+            index = self.findindex(packageid, self.packages)
+            self.packages[index] = ([packageid, address, city, state, zipcode, deadline, weight, notes, status, coordinates, delay])
+
+    def assigncoordinates(self):
+        for package in self.sorted:
+            packageaddress = package[1]
+            for index, address in enumerate(self.addresslist):
+                if packageaddress in address:
+                    package[9] = self.coordinates[index]
 
     # Insert function inserts a package into the PackageMap
     def insert(self, id):
@@ -163,8 +175,8 @@ class PackageMap:
     # Search function returns the package object from a given id
     def search(self, id):
         # find the index of the package to be searched
-        index = hash(id) % len(self.sorted) - 1
-        return self.sorted[index]
+        index = hash(id) % len(self.packages) - 1
+        return self.packages[index]
 
     def getaddress(self, id):
         # find the index of the package to be searched
@@ -182,121 +194,15 @@ class PackageMap:
 
     def updatetime(self, id, time):
         # find the index of the package to update
-        index = hash(id) % len(self.sorted) - 1
-        updatedtime = (self.sorted[index][8][0], time)
-        self.sorted[index][8] = updatedtime
+        index = hash(id) % len(self.packages) - 1
+        updatedtime = (self.packages[index][8][0], time)
+        self.packages[index][8] = updatedtime
 
     def updatestatus(self, id, status):
         # find the index of the package to update
         index = hash(id) % len(self.sorted) - 1
         updatedstatus = (status, self.sorted[index][8][1])
         self.sorted[index][8] = updatedstatus
-
-    # Assign coordinates function assigns coordinates to all packages
-    def assigncoordinates(self):
-        for package in self.sorted:
-            packageaddress = package[1]
-            for index, address in enumerate(self.addresslist):
-                if packageaddress in address:
-                    package[9] = self.coordinates[index]
-
-    def process(self):
-        # Sorting packages and exceptions
-        # I found the best approach was to do this iteratively, removing packages from map.packages as they are sorted
-        # This is because some packages have multiple important attributes, and some exceptions are more important than others
-
-        # Initially had the packages that were exclusively truck 2 in this array
-        # but the algo was clocking in at just over 140 miles
-        # I cherry-picked packages that made sense to be delivered together to hit 136 miles.
-        # There are even more options for cherry-picking, but I'll stick with this for now.
-        groupedids = [3, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 33, 36, 37, 38, 39]  # package ids that must be delivered together
-
-        # remove grouped packages from map.packages and add to grouped list
-        for ids in groupedids:
-            for package in self.unsorted:
-                if package[0] == ids:
-                    self.grouped.append(package)
-
-        for package in self.grouped:
-            # Update status to "Processed"
-            package[8] = ("Processed", "8:00 AM")
-            # Find the index of the package to be inserted
-            # index = hash(package[0]) % len(self.unsorted)
-            index = self.findindex(package[0], self.unsorted)
-            self.sorted.insert(index, package)  # insert the package into the sorted list
-            self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        # remove other exceptions from map.packages and add to appropriate lists
-        for package in self.unsorted:
-            note = package[7]
-            if "Delayed on flight" in note:
-                self.delayed.append(package)
-                package[10] = 65  # delayed until 9:05, 65 mintues after 8:00
-                package[8] = ("Delayed on flight, expected arrival is 9:05 AM", "8:00 AM")
-            # Because package 26 is delayed, it only makes sense to deliver 26 with it to save mileage
-            # So remove 26 from unsorted and add it to delayed
-            # The deadline for 26 is EOD so this is OK
-            # Other packages that can be handled like this are 31, 33
-            if package[0] == 26:
-                self.delayed.append(package)
-                package[10] = 65
-            if "Wrong address listed" in note:
-                self.mislabeled.append(package)
-                package[10] = 140  # delayed until 10:20, 140 minutes after 8:00
-                package[8] = ("Wrong address listed, delayed until corrected.", "8:00 AM")
-            # Package 37 deadline is 10:30, 5 is EOD, both can be shipped on truck 2 with 38
-            if "Can only be on truck 2" in note:
-                self.exclusive.append(package)
-                package[8] = ("Processed at sort facility", "8:00 AM")
-
-        for package in self.delayed:
-            # Find the index of the package to be inserted
-            # index = hash(package[0]) % len(self.unsorted)
-            index = self.findindex(package[0], self.unsorted)
-            self.sorted.insert(index, package)  # insert the package into the sorted list
-            self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        for package in self.mislabeled:
-            # Find the index of the package to be inserted
-            # index = hash(package[0]) % len(self.unsorted)
-            index = self.findindex(package[0], self.unsorted)
-            self.sorted.insert(index, package)  # insert the package into the sorted list
-            self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        for package in self.exclusive:
-            # Find the index of the package to be inserted
-            # index = hash(package[0]) % len(self.unsorted)
-            index = self.findindex(package[0], self.unsorted)
-            self.sorted.insert(index, package)  # insert the package into the sorted list
-            self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        # There should only be 25 packages left in map.packages at this point\
-        # Now seperate packages into 3 lists based on delivery time
-        for package in self.unsorted:
-            deadline = package[5]
-            if "10:30 AM" in deadline:
-                self.deadline1030.append(package)
-                package[8] = ("Processed at sort facility, expected arrival before 10:30 AM", "8:00 AM")
-            if "EOD" in deadline:
-                self.deadlineEOD.append(package)
-                package[8] = ("Processed at sort facility, expected arrival before 5:00 PM", "8:00 AM")
-
-        for package in self.deadline1030:
-            # Find the index of the package to be inserted
-            # index = hash(package[0]) % len(self.unsorted)
-            index = self.findindex(package[0], self.unsorted)
-            self.sorted.insert(index, package)  # insert the package into the sorted list
-            self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        for package in self.deadlineEOD:
-            # Find the index of the package to be inserted
-            # index = hash(package[0]) % len(self.unsorted)
-            index = self.findindex(package[0], self.unsorted)
-            self.sorted.insert(index, package)  # insert the package into the sorted list
-            self.unsorted.pop(index)  # remove the package from the unsorted list
-
-        # All packages should be sorted at this point, return them
-        # return grouped, delayed, mislabeled, exclusive, deadline1030, deadlineEOD
 
     # End of PackageMap class
 
@@ -320,15 +226,10 @@ def calculatedistance(currentaddress, destinationaddress):
     currentindex = None
     destinationindex = None
 
-    # print("Current Address: ", repr(currentaddress))
-    # print("Destination Address: ", repr(destinationaddress))
-
     for address in PackageMap.addresslist:
         splitstring = address.split(',')  # split the address
         streetaddress = splitstring[2]  # get the street address
         addressindex = splitstring[0]  # get the index of the address in the addresslist
-        # streetaddress = address[2]
-        # addressindex = address[0]
         if currentaddress in streetaddress:
             currentindex = int(addressindex)
         if destinationaddress in streetaddress:
@@ -347,9 +248,8 @@ def calculatedistance(currentaddress, destinationaddress):
 # Test Code
 map = PackageMap()
 
-# for package in map.sorted:
-#     packageindex = map.sorted.index(package)
-#     print(packageindex, package)
+# for package in map.packages:
+#     print(package)
 
 # Testing functions
 # package21 = map.search(21)

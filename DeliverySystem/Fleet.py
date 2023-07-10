@@ -1,5 +1,4 @@
 from Truck import *
-
 # Fleet class for managing Trucks
 # This only exists for future development
 class Fleet:

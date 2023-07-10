@@ -1,6 +1,4 @@
 import datetime
-
-
 # Truck class to create Truck objects
 class Truck:
     # Initializes a Truck object
