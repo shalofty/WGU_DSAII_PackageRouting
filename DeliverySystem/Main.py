@@ -246,7 +246,41 @@ for package in map.packages:
 # tree.pack(expand=1, side="right", fill="y")
 tree.grid(row=0, column=1, rowspan=2, sticky="nsew")
 
+slidertime = tk.StringVar()
+slidertime.set("12:00 AM")
 
+
+def formatslidertime(minutes):
+    # Convert the number of minutes into hours and minutes.
+    hours = minutes // 60
+    minutes %= 60
+    # Use AM/PM format.
+    period = 'AM' if hours < 12 else 'PM'
+    hours %= 12
+    if hours == 0:
+        hours = 12
+    return '{:02d}:{:02d} {}'.format(hours, minutes, period)
+
+
+def updatetree(minutes):
+    minutes = int(minutes)
+    slidertime.set(formatslidertime(minutes))
+    tree.delete(*tree.get_children())  # Remove current items in the tree
+    for package in map.packages:
+        delivery_time = package[8][1]  # Get delivery time
+        # If the delivery time's minute of the day is less than or equal to the slider's minute, add to tree.
+        delivery_minutes = delivery_time.hour * 60 + delivery_time.minute
+        if delivery_minutes <= minutes:
+            # Add package to tree...
+            pass
+
+
+hourslider = tk.Scale(root, from_=0, to=1439, orient="horizontal", length=200, label="See package information based on time.", command=updatetree)
+hourslider.grid(row=2, column=1, sticky="nsew")
+
+# End of treeview widget ----->
+
+# Beginning of search widget ----->
 # searchmap function is used to search for a package by id
 # it is tied to the searchentry and searchbutton widgets
 def searchmap(packageid):
@@ -295,8 +329,6 @@ weightlabel = tk.Label(labelFrame, text="Weight: ", bg="white", fg="black")
 weightlabel.grid(row=0, column=7, sticky="w")
 statuslabel = tk.Label(labelFrame, text="Status: ", bg="white", fg="black")
 statuslabel.grid(row=0, column=8, sticky="w")
-
-
 
 # End of Search Feature ----->
 
