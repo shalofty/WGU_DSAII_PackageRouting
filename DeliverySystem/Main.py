@@ -31,16 +31,10 @@ canvas = tk.Canvas(root, width=w, height=h, bg="grey")
 canvas.pack(expand=tk.YES, fill=tk.BOTH)
 canvas.create_image(0, 0, image=pmap, anchor=tk.NW)
 
-# Setting global time to 8:00 AM, time won't increment until packages start being delivered
-# Also updated the times to datetime types to enable incrementing, because the task guidelines
-# explicitly state not to use any additional libraries in the PackageMap class. Why?
-# So they can see how creative we can be, right? Right..
 gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM  # global time
-for package in map.packages:
-    id = package[0]
-    map.updatetime(id, gtime.time())
 
 
+# drawline function I use to draw lines on the map
 def drawline(currentcoordinates, destinationcoordinates, color):
     canvas.create_line(currentcoordinates[0], currentcoordinates[1], destinationcoordinates[0], destinationcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST, dash=(1, 1))
 
@@ -72,6 +66,7 @@ def loadtrucks():
     return fleet
 
 
+# The delivery function used to handle package deliveries
 def deliver(truck, time):
     justdelivered = []
     nottime = []
@@ -161,16 +156,18 @@ def deliver(truck, time):
 # # Load trucks in fleet
 fleet = loadtrucks()
 
-
+# engagefleet function is used to initiate the delivery process
 def engagefleet(truck, gtime, fleet):
     while len(truck.cargo) > 0:
         deliver(truck, truck.time)
         if len(truck.cargo) == 0:
             fleet.totalmileage += truck.mileage
-            print(truck.name + " has delivered all packages.")
+            print(truck.name + " has delivered all packages.\n")
             print("Total mileage: " + str(fleet.totalmileage))
 
-
+# deliverremaining function is used to deliver the remaining packages
+# I could have bundled these two into one function, but this works fine and at some point
+# You have to decide where to spend your time
 def deliverremaining(time):
     # remove delivered packages from map.packages
     for package in map.delivered:
@@ -188,11 +185,11 @@ def deliverremaining(time):
                     break
 
 
-# engage fleet
+# call engagefleet on each truck in fleet
 for truck in fleet.trucks:
     engagefleet(truck, gtime, fleet)
 
-# # deliver remaining packages if not all delivered
+# deliver remaining packages if not all delivered
 if len(map.delivered) != 40:
     time = datetime.datetime(2020, 1, 1, 10, 20, 0)
     deliverremaining(time)
