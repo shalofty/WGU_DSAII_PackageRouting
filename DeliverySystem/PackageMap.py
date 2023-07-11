@@ -155,22 +155,16 @@ class PackageMap:
                 delay = 140
             else:
                 delay = 0
+            deliverytime = None  # set the delivery time to None, update in delivery function
             index = self.findindex(packageid, self.packages)
-            self.packages[index] = ([packageid, address, city, state, zipcode, deadline, weight, notes, status, coordinates, delay])
-
-    def assigncoordinates(self):
-        for package in self.sorted:
-            packageaddress = package[1]
-            for index, address in enumerate(self.addresslist):
-                if packageaddress in address:
-                    package[9] = self.coordinates[index]
+            self.packages[index] = ([packageid, address, city, state, zipcode, deadline, weight, notes, status, coordinates, delay, deliverytime])
 
     # Insert function inserts a package into the PackageMap
     def insert(self, id):
         # find the index of the package to be inserted
         # index = hash(id) % len(self.sorted)
-        index = self.findindex(id, self.sorted)
-        self.sorted.insert(index, self.sorted[id])  # insert the package into the sorted list
+        index = self.findindex(id, self.packages)
+        self.packages.insert(index, self.packages[id])  # insert the package into the sorted list
 
     # Search function returns the package object from a given id
     def search(self, id):
@@ -180,16 +174,16 @@ class PackageMap:
 
     def getaddress(self, id):
         # find the index of the package to be searched
-        index = hash(id) % len(self.sorted) - 1
-        return self.sorted[index][1]
+        index = hash(id) % len(self.packages) - 1
+        return self.packages[index][1]
 
     def updateaddress(self, id, address, city, state, zip):
         # find the index of the package to update
-        index = hash(id) % len(self.sorted) - 1
-        self.sorted[index][1] = address
-        self.sorted[index][2] = city
-        self.sorted[index][3] = state
-        self.sorted[index][4] = zip
+        index = hash(id) % len(self.packages) - 1
+        self.packages[index][1] = address
+        self.packages[index][2] = city
+        self.packages[index][3] = state
+        self.packages[index][4] = zip
         print('Package', id, 'address updated.')
 
     def updatetime(self, id, time):
@@ -200,9 +194,9 @@ class PackageMap:
 
     def updatestatus(self, id, status):
         # find the index of the package to update
-        index = hash(id) % len(self.sorted) - 1
-        updatedstatus = (status, self.sorted[index][8][1])
-        self.sorted[index][8] = updatedstatus
+        index = hash(id) % len(self.packages) - 1
+        updatedstatus = (status, self.packages[index][8][1])
+        self.packages[index][8] = updatedstatus
 
     # End of PackageMap class
 
@@ -246,7 +240,7 @@ def calculatedistance(currentaddress, destinationaddress):
 
 
 # Test Code
-map = PackageMap()
+# map = PackageMap()
 
 # for package in map.packages:
 #     print(package)
