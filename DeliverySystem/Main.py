@@ -6,6 +6,7 @@ from Fleet import *
 
 import datetime
 import tkinter as tk
+from tkinter import ttk
 
 # Creating a PackageMap object named map
 map = PackageMap()
@@ -28,7 +29,8 @@ h = pmap.height()
 
 # Create a canvas that can fit the map image
 canvas = tk.Canvas(root, width=w, height=h, bg="grey")
-canvas.pack(expand=tk.YES, fill=tk.BOTH)
+# canvas.pack(expand=tk.YES, fill=tk.BOTH)
+canvas.grid(row=0, column=0)
 canvas.create_image(0, 0, image=pmap, anchor=tk.NW)
 
 gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM  # global time
@@ -171,13 +173,17 @@ def engagefleet(truck, gtime, fleet):
 # I could have bundled these two into one function, but this works fine and at some point
 # You have to decide where to spend your time
 def deliverremaining(time):
+
     # remove delivered packages from map.packages
-    for package in map.delivered:
-        map.packages.remove(package)
+    # for package in map.delivered:
+    #     map.packages.remove(package)
     for truck in fleet.trucks:  # deliver the rest of the packages
         if "Truck 1" in truck.name:
             for package in map.packages:
-                truck.cargo.append(package)  # add remaining packages to truck cargo
+                status = package[8][0]
+                if "At hub" in status:
+                    truck.cargo.append(package)
+                # truck.cargo.append(package)  # add remaining packages to truck cargo
             while len(truck.cargo) > 0:
                 deliver(truck, time)
                 if len(truck.cargo) == 0:
@@ -196,20 +202,64 @@ if len(map.delivered) != 40:
     time = datetime.datetime(2020, 1, 1, 10, 20, 0)
     deliverremaining(time)
 
+# all packages are delivered, sort map.delivered by id
+map.packages.sort(key=lambda x: x[0])
+
 # Beginning of GUI functionality ----->
+# Tree view of all packages, should include a scrollbar to view all packages based on time
+
+tree = ttk.Treeview(root)  # create treeview widget
+
+# define columns
+tree["columns"] = ("ID", "Address", "Deadline", "City", "Zip", "Weight", "Status")
+tree.column("#0", width=0, stretch=False)
+tree.column("ID", width=40)
+tree.column("Address", width=200)
+tree.column("Deadline", width=100)
+tree.column("City", width=100)
+tree.column("Zip", width=50)
+tree.column("Weight", width=50)
+tree.column("Status", width=100)
+
+# define headings
+tree.heading("#0", text="")
+tree.heading("ID", text="ID")
+tree.heading("Address", text="Address")
+tree.heading("Deadline", text="Deadline")
+tree.heading("City", text="City")
+tree.heading("Zip", text="Zip")
+tree.heading("Weight", text="Weight")
+tree.heading("Status", text="Status")
+
+for package in map.packages:
+    id = package[0]  # package id
+    address = package[1]  # package address
+    deadline = package[5]  # package deadline
+    city = package[2]  # package city
+    zipcode = package[4]  # package zipcode
+    weight = package[6]  # package weight
+    status = package[8][0]  # package status
+    time = package[8][1]  # package delivery time
+    time = time.strftime("%H:%M %p")  # format time
+    tree.insert(parent="", index="end", iid=id, text="", values=(id, address, deadline, city, zipcode, weight, (status + " at " + time)))
+
+# tree.pack(expand=1, side="right", fill="y")
+tree.grid(row=0, column=1, rowspan=2, sticky="nsew")
 
 
 # searchmap function is used to search for a package by id
 # it is tied to the searchentry and searchbutton widgets
 def searchmap(packageid):
-    package = map.search(packageid)
-    id = package[0]
-    address = package[1]
-    deadline = package[5]
-    city = package[2]
-    zipcode = package[4]
-    weight = package[6]
-    status = package[8]
+    package = map.search(packageid)  # search for package by id
+    id = package[0]  # package id
+    address = package[1]  # package address
+    deadline = package[5]  # package deadline
+    city = package[2]  # package city
+    zipcode = package[4]  # package zipcode
+    weight = package[6]  # package weight
+    status = package[8][0]  # package status
+    time = package[8][1]  # package delivery time
+    time = time.strftime("%H:%M %p")  # format time
 
     idlabel.config(text="ID: " + str(id))
     addresslabel.config(text="Address: " + str(address))
@@ -217,27 +267,37 @@ def searchmap(packageid):
     citylabel.config(text="City: " + str(city))
     zipcodelabel.config(text="Zipcode: " + str(zipcode))
     weightlabel.config(text="Weight: " + str(weight))
-    statuslabel.config(text="Status: " + str(status))
+    statuslabel.config(text="Status: " + str(status) + " at " + str(time))
 
 
-searchentry = tk.Entry(root)
-searchentry.pack(fill=tk.X, expand=True, side="bottom", padx=5, pady=5)
-searchbutton = tk.Button(root, text="Search", command=lambda: searchmap(searchentry.get()))
-searchbutton.pack(fill=tk.X, expand=True, side="bottom", padx=5, pady=5)
+searchframe = tk.Frame(root)
+searchframe.grid(row=1, column=0, sticky="nsew")
 
-idlabel = tk.Label(root, text="ID: ", bg="white", fg="black", padx=5, pady=5)
-idlabel.pack(fill=tk.X)
-addresslabel = tk.Label(root, text="Address: ", bg="white", fg="black", padx=5, pady=5)
-addresslabel.pack(fill=tk.X)
-deadlinelabel = tk.Label(root, text="Deadline: ", bg="white", fg="black", padx=5, pady=5)
-deadlinelabel.pack(fill=tk.X)
-citylabel = tk.Label(root, text="City: ", bg="white", fg="black", padx=5, pady=5)
-citylabel.pack(fill=tk.X)
-zipcodelabel = tk.Label(root, text="Zipcode: ", bg="white", fg="black", padx=5, pady=5)
-zipcodelabel.pack(fill=tk.X)
-weightlabel = tk.Label(root, text="Weight: ", bg="white", fg="black", padx=5, pady=5)
-weightlabel.pack(fill=tk.X)
-statuslabel = tk.Label(root, text="Status: ", bg="white", fg="black", padx=5, pady=5)
-statuslabel.pack(fill=tk.X)
+searchentry = tk.Entry(searchframe)
+searchentry.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+searchbutton = tk.Button(searchframe, text="Search", command=lambda: searchmap(int(searchentry.get())))
+searchbutton.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
+
+labelFrame = tk.Frame(searchframe)
+labelFrame.grid(row=2, column=0, sticky="nsew")
+
+idlabel = tk.Label(labelFrame, text="ID: ", bg="white", fg="black")
+idlabel.grid(row=0, column=2, sticky="w")
+addresslabel = tk.Label(labelFrame, text="Address: ", bg="white", fg="black")
+addresslabel.grid(row=0, column=3, sticky="w")
+deadlinelabel = tk.Label(labelFrame, text="Deadline: ", bg="white", fg="black")
+deadlinelabel.grid(row=0, column=4, sticky="w")
+citylabel = tk.Label(labelFrame, text="City: ", bg="white", fg="black")
+citylabel.grid(row=0, column=5, sticky="w")
+zipcodelabel = tk.Label(labelFrame, text="Zipcode: ", bg="white", fg="black")
+zipcodelabel.grid(row=0, column=6, sticky="w")
+weightlabel = tk.Label(labelFrame, text="Weight: ", bg="white", fg="black")
+weightlabel.grid(row=0, column=7, sticky="w")
+statuslabel = tk.Label(labelFrame, text="Status: ", bg="white", fg="black")
+statuslabel.grid(row=0, column=8, sticky="w")
+
+
+
+# End of Search Feature ----->
 
 root.mainloop()

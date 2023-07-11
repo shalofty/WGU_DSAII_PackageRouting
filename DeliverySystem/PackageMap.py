@@ -143,7 +143,7 @@ class PackageMap:
             deadline = row[5]
             weight = row[6]
             notes = row[7]
-            status = ('', '08:00:00')  # tuple : (status, time)
+            status = ('At hub', '08:00:00')  # tuple : (status, time), default values
             # find the coordinates of the package
             for j, listaddress in enumerate(self.addresslist):
                 if address in listaddress:
