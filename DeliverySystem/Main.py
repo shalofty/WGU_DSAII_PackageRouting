@@ -156,6 +156,7 @@ def deliver(truck, time):
 # # Load trucks in fleet
 fleet = loadtrucks()
 
+
 # engagefleet function is used to initiate the delivery process
 def engagefleet(truck, gtime, fleet):
     while len(truck.cargo) > 0:
@@ -164,6 +165,7 @@ def engagefleet(truck, gtime, fleet):
             fleet.totalmileage += truck.mileage
             print(truck.name + " has delivered all packages.\n")
             print("Total mileage: " + str(fleet.totalmileage))
+
 
 # deliverremaining function is used to deliver the remaining packages
 # I could have bundled these two into one function, but this works fine and at some point
@@ -194,5 +196,48 @@ if len(map.delivered) != 40:
     time = datetime.datetime(2020, 1, 1, 10, 20, 0)
     deliverremaining(time)
 
+# Beginning of GUI functionality ----->
+
+
+# searchmap function is used to search for a package by id
+# it is tied to the searchentry and searchbutton widgets
+def searchmap(packageid):
+    package = map.search(packageid)
+    id = package[0]
+    address = package[1]
+    deadline = package[5]
+    city = package[2]
+    zipcode = package[4]
+    weight = package[6]
+    status = package[8]
+
+    idlabel.config(text="ID: " + str(id))
+    addresslabel.config(text="Address: " + str(address))
+    deadlinelabel.config(text="Deadline: " + str(deadline))
+    citylabel.config(text="City: " + str(city))
+    zipcodelabel.config(text="Zipcode: " + str(zipcode))
+    weightlabel.config(text="Weight: " + str(weight))
+    statuslabel.config(text="Status: " + str(status))
+
+
+searchentry = tk.Entry(root)
+searchentry.pack(fill=tk.X, expand=True, side="bottom", padx=5, pady=5)
+searchbutton = tk.Button(root, text="Search", command=lambda: searchmap(searchentry.get()))
+searchbutton.pack(fill=tk.X, expand=True, side="bottom", padx=5, pady=5)
+
+idlabel = tk.Label(root, text="ID: ", bg="white", fg="black", padx=5, pady=5)
+idlabel.pack(fill=tk.X)
+addresslabel = tk.Label(root, text="Address: ", bg="white", fg="black", padx=5, pady=5)
+addresslabel.pack(fill=tk.X)
+deadlinelabel = tk.Label(root, text="Deadline: ", bg="white", fg="black", padx=5, pady=5)
+deadlinelabel.pack(fill=tk.X)
+citylabel = tk.Label(root, text="City: ", bg="white", fg="black", padx=5, pady=5)
+citylabel.pack(fill=tk.X)
+zipcodelabel = tk.Label(root, text="Zipcode: ", bg="white", fg="black", padx=5, pady=5)
+zipcodelabel.pack(fill=tk.X)
+weightlabel = tk.Label(root, text="Weight: ", bg="white", fg="black", padx=5, pady=5)
+weightlabel.pack(fill=tk.X)
+statuslabel = tk.Label(root, text="Status: ", bg="white", fg="black", padx=5, pady=5)
+statuslabel.pack(fill=tk.X)
 
 root.mainloop()
