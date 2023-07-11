@@ -142,9 +142,8 @@ def deliver(truck, time):
             package[11] = truck.time  # update time to package delivery time
             justdelivered.append(package)  # add package to delivered list
             truck.cargo.remove(package)  # remove package from truck cargo
-            # packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
-            print("Package " + str(package[0]) + " has been delivered at " + str(truck.time.time()))
-            print("The deadline was " + str(package[5]))
+            # print("Package " + str(package[0]) + " has been delivered at " + str(truck.time.time()))
+            # print("The deadline was " + str(package[5]))
 
     # End of delivery
     # add delivered packages to map.delivered
@@ -174,8 +173,8 @@ def engagefleet(truck, gtime, fleet):
         deliver(truck, truck.time)
         if len(truck.cargo) == 0:
             fleet.totalmileage += truck.mileage
-            print(truck.name + " has delivered all packages.\n")
-            print("Total mileage: " + str(fleet.totalmileage))
+            # print(truck.name + " has delivered all packages.\n")
+            # print("Total mileage: " + str(fleet.totalmileage))
 
 
 # deliverremaining function is used to deliver the remaining packages
@@ -196,8 +195,8 @@ def deliverremaining(time):
                 deliver(truck, time)
                 if len(truck.cargo) == 0:
                     fleet.totalmileage += truck.mileage
-                    print(truck.name + " has delivered all remaining packages.")
-                    print("Total mileage: " + str(fleet.totalmileage))
+                    # print(truck.name + " has delivered all remaining packages.")
+                    # print("Total mileage: " + str(fleet.totalmileage))
                     break
 
 
