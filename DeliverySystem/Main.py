@@ -19,8 +19,10 @@ MENU_ORIGIN = [672, 756]
 # Create the root window
 root = tk.Tk()
 root.title(WINDOW_TITLE)
-root.resizable(False, False)
+root.resizable(True, True)
 root.configure(background="white")
+root.grid_rowconfigure(0, weight=1)  # This makes the top area expandable
+root.grid_columnconfigure(0, weight=1)  # This makes the whole window expandable
 
 # Load the map image for the GUI
 pmap = tk.PhotoImage(file=MAP_IMAGE_PATH)
@@ -89,13 +91,16 @@ def deliver(truck, time):
                 # print("Cannot deliver package " + str(packageid) + " at this time.")
                 continue
         if "9:00 AM" in deadline:  # if deadline is 9:00 AM, there is only 1
+            package[12] = truck.time  # update time which package left the hub
             distance = calculatedistance(truck.address, packageaddress)
             packagequeue.append((package, distance))
             break
         elif "10:30 AM" in deadline:
+            package[12] = truck.time  # update time which package left the hub
             distance = calculatedistance(truck.address, packageaddress)
             packagequeue.append((package, distance))
         else:
+            package[12] = truck.time  # update time which package left the hub
             distance = calculatedistance(truck.address, packageaddress)  # distance from current address to package
             packagequeue.append((package, distance))  # add package and distance to list
 
@@ -131,6 +136,7 @@ def deliver(truck, time):
     for package in truck.cargo:
         if package[1] == truck.address:
             package[8] = ("Delivered", truck.time)  # update package status to delivered
+            package[11] = truck.time  # update time to package delivery time
             justdelivered.append(package)  # add package to delivered list
             truck.cargo.remove(package)  # remove package from truck cargo
             # packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
@@ -210,6 +216,7 @@ map.packages.sort(key=lambda x: x[0])
 
 tree = ttk.Treeview(root)  # create treeview widget
 
+
 # define columns
 tree["columns"] = ("ID", "Address", "Deadline", "City", "Zip", "Weight", "Status")
 tree.column("#0", width=0, stretch=False)
@@ -271,7 +278,7 @@ def formatslidertime(minutes):
 def converttotime(minutes):
     hours = minutes // 60
     minutes %= 60
-    hours %= 12
+    # hours %= 12
     return datetime.datetime(2020, 1, 1, hours, minutes, 0)
 
 
@@ -288,6 +295,7 @@ def updatetree(minutes):
         city = package[2]  # package city
         zipcode = package[4]  # package zipcode
         weight = package[6]  # package weight
+        lefthub = package[12]  # package left hub time
         deliverytime = package[11]
         if deliverytime is not None:
             fdeliverytime = deliverytime.strftime("%H:%M %p")
@@ -296,14 +304,20 @@ def updatetree(minutes):
             status = "At hub"
             tree.insert(parent="", index="end", iid=id, text="",
                         values=(id, address, deadline, city, zipcode, weight, (status + " at " + fcontime)))
-        if minutes >= 480 and contime < deliverytime:
+        elif minutes >= 480 and lefthub is not None and deliverytime is not None and contime < deliverytime:
             status = "En route"
             tree.insert(parent="", index="end", iid=id, text="",
                         values=(id, address, deadline, city, zipcode, weight, (status + " at " + fcontime)))
-        if minutes >= 480 and contime >= deliverytime:
+        elif minutes >= 480 and deliverytime is not None and contime >= deliverytime:
             status = "Delivered"
             tree.insert(parent="", index="end", iid=id, text="",
                         values=(id, address, deadline, city, zipcode, weight, (status + " at " + fdeliverytime)))
+        else:
+            print(f"Package {id} has an invalid status.")
+            print(f"Package {id} has a status of {status}.")
+            print(f"Package {id} has a delivery time of {deliverytime}.")
+            print(f"Package {id} has a left hub time of {lefthub}.")
+
 
 
 hourslider = tk.Scale(root, from_=0, to=1439, orient="vertical", length=200, command=updatetree)

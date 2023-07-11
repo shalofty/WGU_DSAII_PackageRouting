@@ -155,9 +155,10 @@ class PackageMap:
                 delay = 140
             else:
                 delay = 0
+            lefthub = None  # set the lefthub to None, update in delivery function
             deliverytime = None  # set the delivery time to None, update in delivery function
             index = self.findindex(packageid, self.packages)
-            self.packages[index] = ([packageid, address, city, state, zipcode, deadline, weight, notes, status, coordinates, delay, deliverytime])
+            self.packages[index] = ([packageid, address, city, state, zipcode, deadline, weight, notes, status, coordinates, delay, deliverytime, lefthub])
 
     # Insert function inserts a package into the PackageMap
     def insert(self, id):
