@@ -40,7 +40,8 @@ gtime = datetime.datetime(2020, 1, 1, 8, 0, 0)  # 8:00 AM  # global time
 
 # drawline function I use to draw lines on the map
 def drawline(currentcoordinates, destinationcoordinates, color):
-    canvas.create_line(currentcoordinates[0], currentcoordinates[1], destinationcoordinates[0], destinationcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST, dash=(1, 1))
+    canvas.create_line(currentcoordinates[0], currentcoordinates[1], destinationcoordinates[0],
+                       destinationcoordinates[1], fill=color, width=3, smooth=True, arrow=tk.LAST, dash=(1, 1))
 
 
 # loadtrucks function manually loads packages onto trucks, and returns a fleet object
@@ -85,8 +86,10 @@ def deliver(truck, time):
         package[8] = ("En Route", truck.time)  # update package status to en route
         if delay > 0:
             starttime = datetime.datetime(2020, 1, 1, 8, 0, 0)
-            delayedtime = starttime + datetime.timedelta(minutes=delay)  # gtime: datetime = datetime.datetime(2020, 1, 1, 8, 0, 0)
+            delayedtime = starttime + datetime.timedelta(
+                minutes=delay)  # gtime: datetime = datetime.datetime(2020, 1, 1, 8, 0, 0)
             if time < delayedtime:
+                package[12] = truck.time  # update time which package left the hub
                 nottime.append(package)
                 # print("Cannot deliver package " + str(packageid) + " at this time.")
                 continue
@@ -179,7 +182,6 @@ def engagefleet(truck, gtime, fleet):
 # I could have bundled these two into one function, but this works fine and at some point
 # You have to decide where to spend your time
 def deliverremaining(time):
-
     # remove delivered packages from map.packages
     # for package in map.delivered:
     #     map.packages.remove(package)
@@ -216,7 +218,6 @@ map.packages.sort(key=lambda x: x[0])
 
 tree = ttk.Treeview(root)  # create treeview widget
 
-
 # define columns
 tree["columns"] = ("ID", "Address", "Deadline", "City", "Zip", "Weight", "Status")
 tree.column("#0", width=0, stretch=False)
@@ -248,7 +249,8 @@ for package in map.packages:
     status = package[8][0]  # package status
     time = package[8][1]  # package delivery time
     time = time.strftime("%H:%M %p")  # format time
-    tree.insert(parent="", index="end", iid=id, text="", values=(id, address, deadline, city, zipcode, weight, (status + " at " + time)))
+    tree.insert(parent="", index="end", iid=id, text="",
+                values=(id, address, deadline, city, zipcode, weight, (status + " at " + time)))
 
 # tree.pack(expand=1, side="right", fill="y")
 tree.grid(row=0, column=1, rowspan=2, sticky="nsew")
@@ -262,6 +264,7 @@ timelabel = tk.Label(root, textvariable=slidertime)
 timelabel.grid(row=1, column=1, sticky="nsew")
 
 
+# Format the slider time
 def formatslidertime(minutes):
     # Convert the number of minutes into hours and minutes.
     hours = minutes // 60
@@ -282,6 +285,7 @@ def converttotime(minutes):
     return datetime.datetime(2020, 1, 1, hours, minutes, 0)
 
 
+# This function updates the treeview based on the slider time
 def updatetree(minutes):
     minutes = int(minutes)
     contime = converttotime(minutes)
@@ -304,7 +308,7 @@ def updatetree(minutes):
             status = "At hub"
             tree.insert(parent="", index="end", iid=id, text="",
                         values=(id, address, deadline, city, zipcode, weight, (status + " at " + fcontime)))
-        elif minutes >= 480 and lefthub is not None and deliverytime is not None and contime < deliverytime:
+        elif minutes >= 480 and lefthub is not None and deliverytime is not None and contime <= deliverytime:
             status = "En route"
             tree.insert(parent="", index="end", iid=id, text="",
                         values=(id, address, deadline, city, zipcode, weight, (status + " at " + fcontime)))
@@ -313,22 +317,30 @@ def updatetree(minutes):
             tree.insert(parent="", index="end", iid=id, text="",
                         values=(id, address, deadline, city, zipcode, weight, (status + " at " + fdeliverytime)))
         else:
-            print(f"Package {id} has an invalid status.")
-            print(f"Package {id} has a status of {status}.")
-            print(f"Package {id} has a delivery time of {deliverytime}.")
-            print(f"Package {id} has a left hub time of {lefthub}.")
+            pass
+            # print(f"Package {id} has an invalid status.")
+            # print(f"Package {id} has a status of {status}.")
+            # print(f"Package {id} has a delivery time of {deliverytime}.")
+            # print(f"Package {id} has a left hub time of {lefthub}.")
 
 
-
+# Create a slider to select the time
 hourslider = tk.Scale(root, from_=0, to=1439, orient="vertical", length=200, command=updatetree)
 hourslider.grid(row=0, column=2, sticky="nsew")
 
+
 # End of treeview widget ----->
+
 
 # Beginning of search widget ----->
 # searchmap function is used to search for a package by id
 # it is tied to the searchentry and searchbutton widgets
 def searchmap(packageid):
+    # make sure package id is a number
+    if packageid.isdigit():
+        packageid = int(packageid)
+    else:
+        return "Please enter a package ID."
     package = map.search(packageid)  # search for package by id
     id = package[0]  # package id
     address = package[1]  # package address
@@ -354,7 +366,7 @@ searchframe.grid(row=1, column=0, sticky="nsew")
 
 searchentry = tk.Entry(searchframe)
 searchentry.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-searchbutton = tk.Button(searchframe, text="Search", command=lambda: searchmap(int(searchentry.get())))
+searchbutton = tk.Button(searchframe, text="Search", command=lambda: searchmap(searchentry.get()))
 searchbutton.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
 
 labelFrame = tk.Frame(searchframe)
@@ -376,5 +388,17 @@ statuslabel = tk.Label(labelFrame, text="Status: ", bg="white", fg="black")
 statuslabel.grid(row=0, column=8, sticky="w")
 
 # End of Search Feature ----->
+# Beginning of total mileage ----->
+
+totalmileagelabel = tk.Label(labelFrame, text="Total Mileage: ", bg="white", fg="black")
+totalmileagelabel.grid(row=2, column=1, sticky="w")
+
+
+def gettotalmileage():
+    totalmileage = fleet.totalmileage
+    totalmileagelabel.config(text="Total Mileage: " + str(totalmileage) + " miles")
+
+
+gettotalmileage()
 
 root.mainloop()
