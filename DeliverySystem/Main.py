@@ -130,7 +130,7 @@ def deliver(truck, time):
     # update package status to delivered
     for package in truck.cargo:
         if package[1] == truck.address:
-            package[8] = ("Delivered", time)  # update package status to delivered
+            package[8] = ("Delivered", truck.time)  # update package status to delivered
             justdelivered.append(package)  # add package to delivered list
             truck.cargo.remove(package)  # remove package from truck cargo
             # packagequeue.remove((package, nearestdistance))  # remove package from packagequeue
@@ -141,7 +141,7 @@ def deliver(truck, time):
     # add delivered packages to map.delivered
     for package in justdelivered:
         if nearestid == package[0]:
-            package[11] = time  # update time to package delivery time
+            package[11] = truck.time  # update time to package delivery time
         map.delivered.append(package)
     # when truck is empty, return to hub
     # the instructors in the course chatter said this wasn't necessary, but it is for the GUI
@@ -152,7 +152,7 @@ def deliver(truck, time):
         truck.coordinates = [397, 456]
         # update truck trip
         truck.trip += 1
-    return time
+    return truck.time
 
 
 # # Load trucks in fleet
@@ -246,8 +246,13 @@ for package in map.packages:
 # tree.pack(expand=1, side="right", fill="y")
 tree.grid(row=0, column=1, rowspan=2, sticky="nsew")
 
+# Time storing variables
 slidertime = tk.StringVar()
-slidertime.set("12:00 AM")
+slidertime.set("Select Time")
+
+# Create a label to display the slider time
+timelabel = tk.Label(root, textvariable=slidertime)
+timelabel.grid(row=1, column=1, sticky="nsew")
 
 
 def formatslidertime(minutes):
@@ -262,21 +267,47 @@ def formatslidertime(minutes):
     return '{:02d}:{:02d} {}'.format(hours, minutes, period)
 
 
+# Function to convert minutes to datetime for comparison with package delivery time
+def converttotime(minutes):
+    hours = minutes // 60
+    minutes %= 60
+    hours %= 12
+    return datetime.datetime(2020, 1, 1, hours, minutes, 0)
+
+
 def updatetree(minutes):
     minutes = int(minutes)
+    contime = converttotime(minutes)
+    fcontime = contime.strftime("%H:%M %p")
     slidertime.set(formatslidertime(minutes))
     tree.delete(*tree.get_children())  # Remove current items in the tree
     for package in map.packages:
-        delivery_time = package[8][1]  # Get delivery time
-        # If the delivery time's minute of the day is less than or equal to the slider's minute, add to tree.
-        delivery_minutes = delivery_time.hour * 60 + delivery_time.minute
-        if delivery_minutes <= minutes:
-            # Add package to tree...
-            pass
+        id = package[0]  # package id
+        address = package[1]  # package address
+        deadline = package[5]  # package deadline
+        city = package[2]  # package city
+        zipcode = package[4]  # package zipcode
+        weight = package[6]  # package weight
+        deliverytime = package[11]
+        if deliverytime is not None:
+            fdeliverytime = deliverytime.strftime("%H:%M %p")
+        status = package[8][0]  # Get package status
+        if minutes < 480:
+            status = "At hub"
+            tree.insert(parent="", index="end", iid=id, text="",
+                        values=(id, address, deadline, city, zipcode, weight, (status + " at " + fcontime)))
+        if minutes >= 480 and contime < deliverytime:
+            status = "En route"
+            tree.insert(parent="", index="end", iid=id, text="",
+                        values=(id, address, deadline, city, zipcode, weight, (status + " at " + fcontime)))
+        if minutes >= 480 and contime >= deliverytime:
+            status = "Delivered"
+            tree.insert(parent="", index="end", iid=id, text="",
+                        values=(id, address, deadline, city, zipcode, weight, (status + " at " + fdeliverytime)))
 
 
-hourslider = tk.Scale(root, from_=0, to=1439, orient="horizontal", length=200, label="See package information based on time.", command=updatetree)
-hourslider.grid(row=2, column=1, sticky="nsew")
+hourslider = tk.Scale(root, from_=0, to=1439, orient="vertical", length=200, command=updatetree)
+hourslider.grid(row=0, column=2, sticky="nsew")
 
 # End of treeview widget ----->
 
